@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+/* White theme only. Dark mode is intentionally not supported: the variant below
+   is neutralised so a viewer's OS preference can never repaint the site. */
+@custom-variant dark (&:not(*));
+
+@theme {
+  /* ---- Typeface -----------------------------------------------------------
+     One family, sans only. Weight carries the hierarchy that a second family
+     would otherwise carry. Family var is set on <html> by app/fonts.ts. */
+  --font-sans: var(--font-sans-family), "Helvetica Neue", Arial, sans-serif;
+
+  /* ---- Colour --------------------------------------------------------------
+     Near-black on warm white, a restrained warm grey ramp, one quiet accent.
+     Accent is a muted slate-blue, not the terracotta/cream pairing that's the
+     reflexive AI-design default — deliberately moved off that axis. */
+  --color-page: #f8f7f4;
+  --color-surface: #efede7;
+  --color-ink: #14140f;
+  --color-ink-soft: #3a382f;
+  --color-muted: #6b6a61;
+  --color-faint: #a19e93;
+  --color-line: #e2e0d8;
+  --color-accent: #3d4a5c;
+
+  /* ---- Type scale ------------------------------------------------------------
+     12px is the hard floor — nothing on the site goes smaller. Nav/body sit
+     at 16px (--text-base). Headings scale up with confidence from there. */
+  --text-2xs: 0.75rem; /* 12px — floor */
+  --text-2xs--line-height: 1.4;
+  --text-xs: 0.8125rem; /* 13px */
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.875rem; /* 14px */
+  --text-sm--line-height: 1.55;
+  --text-base: 1rem; /* 16px — nav links pin here */
+  --text-base--line-height: 1.6;
+  --text-md: 1.125rem; /* 18px */
+  --text-md--line-height: 1.55;
+  --text-lg: 1.375rem; /* 22px */
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.75rem; /* 28px */
+  --text-xl--line-height: 1.3;
+  --text-2xl: 2.25rem; /* 36px */
+  --text-2xl--line-height: 1.15;
+  --text-3xl: 3rem; /* 48px */
+  --text-3xl--line-height: 1.08;
+  --text-4xl: 4rem; /* 64px */
+  --text-4xl--line-height: 1.02;
+  --text-5xl: 5.25rem; /* 84px */
+  --text-5xl--line-height: 1;
+  --text-6xl: 6.5rem; /* 104px */
+  --text-6xl--line-height: 0.98;
+
+  /* ---- Tracking --------------------------------------------------------------
+     Exactly two values, both tight, never loose. Headings/wordmark at -2%;
+     everything else — body, UI, nav — sits consistently at -1.5%. */
+  --tracking-tight: -0.02em;
+  --tracking-ui: -0.015em;
+
+  /* ---- Spacing -----------------------------------------------------------
+     Semantic steps on top of Tailwind's 0.25rem base, so page rhythm is a
+     token rather than a number each page re-picks. */
+  --spacing-gutter: 1.25rem;
+  --spacing-gutter-lg: 2rem;
+  --spacing-section: 6rem;
+  --spacing-section-lg: 9rem;
+
+  /* ---- Motion ------------------------------------------------------------
+     Slow and subtle only. One easing curve across the whole site. */
+  --ease-editorial: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Duration tokens live outside @theme (Tailwind has no duration namespace);
+   use them as duration-[var(--motion-slow)]. */
+:root {
+  --motion-fast: 200ms;
+  --motion-slow: 500ms;
+  --motion-slower: 700ms;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-page);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    letter-spacing: var(--tracking-ui);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Headings get the tighter tracking and heavier weight; still the same
+     family as everything else — weight is what signals hierarchy here. */
+  h1,
+  h2,
+  h3 {
+    font-weight: 700;
+    letter-spacing: var(--tracking-tight);
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-page);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+}
+
+/* Honour the OS setting: no motion, but never break :hover/:focus feedback. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
