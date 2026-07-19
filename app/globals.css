@@ -113,6 +113,26 @@
 /* Honour the OS setting: no motion, but never break :hover/:focus feedback.
    NB: this only governs CSS transitions/animations. GSAP and Lenis are
    JS-driven and opt out separately — see SmoothScroll and HeroCarousel. */
+/* Custom cursor replaces the native one — but ONLY where a fine pointer and
+   hover exist. Touch/coarse devices keep their native cursor and never mount
+   the Cursor component, so this must not hide it there. Interactive elements
+   keep cursor:pointer as a fallback for the brief moment before JS mounts. */
+@media (pointer: fine) and (hover: hover) {
+  html {
+    cursor: none;
+  }
+
+  a,
+  button,
+  label,
+  input,
+  textarea,
+  select,
+  [role="button"] {
+    cursor: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

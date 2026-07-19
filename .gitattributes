@@ -1,0 +1,16 @@
+# Force binary handling regardless of core.autocrlf — without this, git's
+# content-sniffing heuristic can classify a text-safe binary format (like our
+# hand-built minimal PDF, which is pure ASCII) as text and normalize LF to
+# CRLF on checkout. That shifts every byte offset in a PDF's xref table and
+# silently corrupts the file. Never let git guess for these.
+*.pdf -text
+*.png -text
+*.jpg -text
+*.jpeg -text
+*.gif -text
+*.webp -text
+*.ico -text
+*.woff -text
+*.woff2 -text
+*.ttf -text
+*.otf -text

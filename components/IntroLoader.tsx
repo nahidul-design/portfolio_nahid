@@ -2,9 +2,16 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "@/lib/gsap";
-
-/** Must match ScrollReveals' treatment — the two systems share one look. */
-const REVEAL_FROM = { y: 18, autoAlpha: 0, filter: "blur(8px)" };
+import {
+  addImageRevealTo,
+  REVEAL_CLEAR,
+  REVEAL_DUR,
+  REVEAL_EASE,
+  REVEAL_FROM,
+  REVEAL_STAGGER,
+  REVEAL_TO,
+  setImageRevealFrom,
+} from "@/lib/reveal";
 
 /**
  * Intro per the Figma Intro Animation frames (96:164 → 96:167), played on
@@ -53,7 +60,10 @@ export default function IntroLoader() {
     const groups = gsap.utils
       .toArray<HTMLElement>("[data-reveal-group]")
       .filter(inView);
-    for (const el of [...singles, ...groups]) {
+    const images = gsap.utils
+      .toArray<HTMLElement>("[data-reveal-image]")
+      .filter(inView);
+    for (const el of [...singles, ...groups, ...images]) {
       el.setAttribute("data-intro-owned", "");
     }
     const groupChildren = groups.map(
@@ -69,6 +79,7 @@ export default function IntroLoader() {
     // ever be seen snapping to its hidden state.
     tl.set(words, { y: 30, autoAlpha: 0, skewY: 5, filter: "blur(8px)" }, 0);
     tl.set(owned, REVEAL_FROM, 0);
+    tl.call(() => images.forEach(setImageRevealFrom), [], 0);
 
     // Hold ~1.2s, then collapse: text out first, box down to the bare mark.
     tl.to(textRef.current, { opacity: 0, duration: 0.2 }, 1.2);
@@ -119,17 +130,16 @@ export default function IntroLoader() {
     // with their usual 60ms child stagger. Same values/ease as ScrollReveals
     // so above- and below-fold reveals are indistinguishable.
     const revealVars = {
-      y: 0,
-      autoAlpha: 1,
-      filter: "blur(0px)",
-      duration: 0.8,
-      ease: "reveal",
-      clearProps: "filter,transform",
-    } as const;
+      ...REVEAL_TO,
+      duration: REVEAL_DUR,
+      ease: REVEAL_EASE,
+      clearProps: REVEAL_CLEAR,
+    };
     if (singles.length) tl.to(singles, { ...revealVars }, 2.4);
     for (const children of groupChildren) {
-      tl.to(children, { ...revealVars, stagger: 0.06 }, 2.4);
+      tl.to(children, { ...revealVars, stagger: REVEAL_STAGGER }, 2.4);
     }
+    for (const img of images) addImageRevealTo(tl, img, 2.4);
 
     // Below-fold content stays with ScrollReveals; let it bind now.
     tl.call(() => window.dispatchEvent(new Event("nh-intro-reveal")), [], 2.4);
@@ -142,7 +152,12 @@ export default function IntroLoader() {
       tl.kill();
       gsap.set(words, { clearProps: "all" });
       gsap.set(owned, { clearProps: "all" });
-      for (const el of [...singles, ...groups]) {
+      for (const el of images) {
+        gsap.set(el, { clearProps: "all" });
+        const img = el.querySelector("img");
+        if (img) gsap.set(img, { clearProps: "all" });
+      }
+      for (const el of [...singles, ...groups, ...images]) {
         el.removeAttribute("data-intro-owned");
       }
     };

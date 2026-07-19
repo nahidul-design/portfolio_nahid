@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Cursor from "@/components/Cursor";
 import Nav from "@/components/Nav";
 import ScrollReveals from "@/components/ScrollReveals";
 import SmoothScroll from "@/components/SmoothScroll";
@@ -29,6 +30,7 @@ export default function RootLayout({
           <Nav />
           <div className="flex-1">{children}</div>
           <ScrollReveals />
+          <Cursor />
         </SmoothScroll>
       </body>
     </html>

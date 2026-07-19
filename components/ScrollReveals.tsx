@@ -3,16 +3,30 @@
 import { useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
+import {
+  addImageReveal,
+  REVEAL_CLEAR,
+  REVEAL_DUR,
+  REVEAL_EASE,
+  REVEAL_FROM,
+  REVEAL_STAGGER,
+  REVEAL_START,
+} from "@/lib/reveal";
 
 /**
  * The site-wide default reveal: every element fades in, rises ~18px, and
  * resolves from blur(8px) to sharp — felt more than seen. One treatment,
  * one ease ("reveal" = cubic-bezier(0.16,1,0.3,1), registered in lib/gsap),
- * applied through two attributes:
+ * applied through three attributes:
  *
  *   data-reveal        the element reveals as one unit
  *   data-reveal-group  the element's direct children reveal in sequence,
  *                      60ms apart (rows of stats, nav links, meta cells…)
+ *   data-reveal-image  clipped frame unmasks while the <img> inside settles
+ *                      from 1.08 → 1 (container must be overflow-hidden)
+ *
+ * Values live in lib/reveal.ts, shared with IntroLoader so a target animates
+ * identically whichever system owns it.
  *
  * Triggers once at 15% into the viewport; above-the-fold elements fire on
  * load. When the intro loader is present, binding waits for its
@@ -24,20 +38,19 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
  * word-by-word reveal is the intro's signature and lives in IntroLoader.
  * Reduced motion: bail entirely; everything appears instantly.
  */
-const FROM = { y: 18, autoAlpha: 0, filter: "blur(8px)" };
-const DUR = 0.8;
-const STAGGER = 0.06;
-const START = "top 85%";
-
 function bind(): gsap.Context {
   return gsap.context(() => {
+    const trigger = (el: Element) => ({
+      trigger: el,
+      start: REVEAL_START,
+      once: true,
+    });
+
     const common = (el: Element) => ({
-      duration: DUR,
-      ease: "reveal",
-      // Leave no residual filter/transform on settled elements — a lingering
-      // blur(0px) still costs the compositor a layer.
-      clearProps: "filter,transform",
-      scrollTrigger: { trigger: el, start: START, once: true },
+      duration: REVEAL_DUR,
+      ease: REVEAL_EASE,
+      clearProps: REVEAL_CLEAR,
+      scrollTrigger: trigger(el),
     });
 
     // [data-intro-owned] targets belong to the intro loader, which hides
@@ -47,13 +60,24 @@ function bind(): gsap.Context {
     gsap.utils
       .toArray<HTMLElement>("[data-reveal]:not([data-intro-owned])")
       .forEach((el) => {
-        gsap.from(el, { ...FROM, ...common(el) });
+        gsap.from(el, { ...REVEAL_FROM, ...common(el) });
       });
 
     gsap.utils
       .toArray<HTMLElement>("[data-reveal-group]:not([data-intro-owned])")
       .forEach((el) => {
-        gsap.from(el.children, { ...FROM, ...common(el), stagger: STAGGER });
+        gsap.from(el.children, {
+          ...REVEAL_FROM,
+          ...common(el),
+          stagger: REVEAL_STAGGER,
+        });
+      });
+
+    // One timeline per image so the mask and the picture share a trigger.
+    gsap.utils
+      .toArray<HTMLElement>("[data-reveal-image]:not([data-intro-owned])")
+      .forEach((el) => {
+        addImageReveal(gsap.timeline({ scrollTrigger: trigger(el) }), el, 0);
       });
   });
 }

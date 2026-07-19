@@ -97,27 +97,45 @@ Home, top to bottom:
    Instrument Serif statement with an "Idea block" (copy + dark "Let's
    Discuss" pill) pinned top-right of the headline on `lg`, a three-column
    meta row, then the carousel. *(Figma: `96:12`, `96:74`)*
-3. **Work index** — the entry point into the case-study list.
-4. **Three showcase strips** — full case-study preview modules in three
-   layout variants (full-width single, two-up, three-up), each showing a
-   project screen + title + category + year. *(Figma: the three `04 Showcase
-   A — Dashboard` frames inside `Frame 10`, nodes `96:30`, `96:37`, `96:52`
-   — currently all populated with the same placeholder "Ledger" project;
-   real distinct projects needed per strip)*
-5. **About + experience** — combined section: personal/about copy plus a
-   résumé-style experience list (role, company, dates) and education.
-   *(Figma: `About col`, node `96:156`, and `07 Résumé`, node `96:82` — these
-   sit as separate frames in Figma; combine them into one section per this
-   spec)*
-6. **Testimonial** — a pull-quote/slogan moment. *(Figma: `Frame 2`, node
-   `96:161`, two "Slogan" text layers — content not yet in metadata, pull
-   with `get_design_context` when building this section)*
-7. **UI Picker promo** — teaser for a separate "UI Picker" mini-experience
-   ("Think you have a good eye? — five quick rounds of design judgment...").
-   *(Figma: `10 UI Picker`, node `96:115`)*
-8. **Contact** — "Let's talk.", email link, LinkedIn + WhatsApp.
-   *(Figma: `11 Contact`, node `96:132`)*
-9. **Footer** — wordmark + copyright. *(Figma: `12 Footer`, node `96:151`)*
+3. **About** — *built.* [components/About.tsx](components/About.tsx): two
+   columns — bio (two-tone Instrument Serif), hairline, tools line; portrait
+   right. *(Figma: `About col`, node `96:156`)*
+4. **Case studies** — *built.* [components/CaseStudies.tsx](components/CaseStudies.tsx):
+   the "Case studies" label plus all three showcase strips (full-width,
+   two-up, three-up) in one component — the original spec's separate "work
+   index" entry point and "three showcase strips" item were built combined,
+   since the label and strips read as one section on the page. Cards are
+   `/work/[slug]` links with hover scale/gradient/caption-shift. *(Figma:
+   `Frame 10`, node `96:25`, showcases at `96:30`/`96:37`/`96:52` — still
+   placeholder "Ledger" cover art repeated across dummy projects)*
+5. **Testimonial** — *built.* [components/Quote.tsx](components/Quote.tsx).
+   *(Figma: `Frame 2`, node `96:161` — it's a Steve Jobs quote, not an
+   original manifesto; kept the attribution)*
+6. **Résumé** — *built.* [components/Resume.tsx](components/Resume.tsx):
+   label-left/content-right Experience and Education rows, hairlines between
+   jobs, Download Résumé pill linking to `/resume.pdf` (byte-verified
+   placeholder — real xref offsets, opens in any viewer). Built as its own
+   section, not merged into About — the original spec above called for one
+   combined "About + experience" section, but was built across two separate
+   turns as two components. If a single merged section is still wanted,
+   this needs revisiting. *(Figma: `07 Résumé`, node `96:82`)*
+7. **UI Picker promo** — *built.* [components/UIPicker.tsx](components/UIPicker.tsx).
+   First dark (`bg-ink`) band on the page. Links to `/ui-picker`, which
+   doesn't exist yet — forward-wired only. *(Figma: `10 UI Picker`, node
+   `96:115`)*
+8. **Contact** — *built.* [components/Contact.tsx](components/Contact.tsx).
+   `id="contact"` is load-bearing — Nav's Contact link points at `#contact`.
+   WhatsApp link is `href="#"`, no real number provided yet. *(Figma:
+   `11 Contact`, node `96:132`)*
+9. **Footer** — *built.* [components/HomeFooter.tsx](components/HomeFooter.tsx) —
+   named `HomeFooter`, not `Footer`: `components/Footer.tsx` is the v1
+   component still used by the stale `/about`, `/work/[slug]`, and
+   `not-found` routes: overwriting it would have silently broken them.
+   *(Figma: `12 Footer`, node `96:151`)*
+
+**Home page is now fully assembled**, [app/page.tsx](app/page.tsx) —
+Nav (root layout) → Hero → About → Case studies → Testimonial → Résumé →
+UI Picker → Contact → PenguinSlot → HomeFooter.
 
 Note the Figma canvas Y-order doesn't exactly match this list (e.g. About
 sits before the showcase strips on the canvas, and Résumé sits after the
@@ -142,6 +160,21 @@ acquisition — no Club GreenSock licence, no separate package.
   with Lenis's smoothed position.
 - `gsap.ticker.lagSmoothing(0)` is set there, so any ticker callback must
   clamp its own `dt` (a backgrounded tab otherwise resumes with one huge step).
+
+### Custom cursor
+
+[components/Cursor.tsx](components/Cursor.tsx). A ~12px circle trailing the
+pointer with a dt-corrected lerp, driven from the **shared** `gsap.ticker`
+(never a second rAF loop). Morphs by reading the element under the pointer:
+`data-cursor="view"` grows to a filled "View" pill with the fade-blur-up
+entrance; `a`/`button`/inputs shrink to a 5px dot; otherwise a hollow circle.
+Native cursor is hidden via `@media (pointer: fine) and (hover: hover)` in
+globals.css — the component itself also only mounts when `(pointer: fine)`,
+so touch/coarse devices keep their native cursor and this never renders.
+Position is written with `gsap.quickSetter(..., "x"/"y")` (the `transform`
+property); the element's `-translate-1/2` centering uses the separate
+`translate` property, so the two compose instead of overwriting each other.
+Any element that should trigger the "View" pill gets `data-cursor="view"`.
 
 ### Hero carousel
 
@@ -203,6 +236,9 @@ Two registers, deliberately distinct:
   `clearProps: "filter,transform"` so settled elements don't keep paying for
   a `blur(0px)` compositor layer. Reduced motion bails out entirely
   (instant appearance).
+  All values live in [lib/reveal.ts](lib/reveal.ts), imported by **both**
+  ScrollReveals and IntroLoader — never redeclare them locally, or a target
+  animates differently depending on which of the two systems owns it.
 
 > ### ⚠️ STANDING CONVENTION — apply without being asked
 >
@@ -218,7 +254,14 @@ Two registers, deliberately distinct:
 > |---|---|
 > | Element settles as one unit | `<Reveal as="section">` or `data-reveal` |
 > | Repeated/grouped children stagger 60ms | `<Reveal as="ul" group>` or `data-reveal-group` |
+> | **Image** — frame unmasks, picture settles 1.08→1 | `<Reveal image className="overflow-hidden"><img/></Reveal>` or `data-reveal-image` |
 > | Interactive element (`btn-liquid`, any CSS transition on opacity/transform) | wrap it: `<Reveal><a className="btn-liquid"…/></Reveal>` |
+>
+> The image variant is the **only** sanctioned departure from fade-blur-up.
+> Its container must be `overflow-hidden` (the clip needs something to clip)
+> and the `<img>` inside must carry **no transform utility** — the reveal
+> animates its scale, so a class-set `scale-*` is overwritten mid-tween and
+> snaps back on `clearProps`. Crop with `object-position`, not `scale`.
 >
 > [components/Reveal.tsx](components/Reveal.tsx) is the typed, discoverable
 > path; the raw attributes are equivalent and equally fine. `Reveal` is
