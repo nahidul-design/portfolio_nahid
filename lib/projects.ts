@@ -12,6 +12,28 @@ export const PROJECT_CATEGORIES = [
 
 export type ProjectCategory = (typeof PROJECT_CATEGORIES)[number];
 
+export const CATEGORY_LABELS: Record<ProjectCategory, string> = {
+  dashboard: "Dashboard",
+  landing: "Landing page",
+  saas: "SaaS",
+  webapp: "Web app",
+  mobile: "Mobile app",
+};
+
+/** The three batches the home gallery pages through, in order. */
+export const HOME_BATCHES = [
+  { category: "dashboard", label: "Dashboards" },
+  { category: "landing", label: "Landing" },
+  { category: "mobile", label: "Mobile" },
+] as const satisfies readonly { category: ProjectCategory; label: string }[];
+
+/** Only the fields the gallery cards need — keeps the client payload small. */
+export interface ProjectCard {
+  slug: string;
+  title: string;
+  coverImage: string;
+}
+
 export interface ProjectFrontmatter {
   title: string;
   category: ProjectCategory;

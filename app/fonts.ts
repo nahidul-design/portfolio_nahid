@@ -1,12 +1,25 @@
-import { Geist } from "next/font/google";
+import { Barlow, Instrument_Serif, Kaushan_Script } from "next/font/google";
 
-/**
- * Single neutral grotesque, used everywhere — wordmark, headings, nav, body.
- * Variable weight axis: headings/wordmark lean on 600–700, body/UI on 400–500.
- * No serif, no second family.
- */
-export const sans = Geist({
+/** Display headings — set uppercase, tight tracking, two-tone opacity per line. */
+export const display = Instrument_Serif({
   subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  variable: "--font-display-family",
+});
+
+/** Body + all UI. Regular for copy, Medium for the emphasised half of a label. */
+export const sans = Barlow({
+  subsets: ["latin"],
+  weight: ["400", "500"],
   display: "swap",
   variable: "--font-sans-family",
+});
+
+/** Wordmark only — never used for anything else on the site. */
+export const script = Kaushan_Script({
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  variable: "--font-script-family",
 });

@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import Nav from "@/components/Nav";
-import { sans } from "./fonts";
+import ScrollReveals from "@/components/ScrollReveals";
+import SmoothScroll from "@/components/SmoothScroll";
+import { display, sans, script } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Nahid Here",
-    template: "%s — Nahid Here",
+    default: "Nahidul Islam — Product Designer",
+    template: "%s — Nahidul Islam",
   },
-  description: "Portfolio of Nahid.",
+  description:
+    "Product designer in Dhaka making complicated things feel obvious.",
 };
 
 export default function RootLayout({
@@ -17,10 +20,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={sans.variable}>
+    <html
+      lang="en"
+      className={`${display.variable} ${sans.variable} ${script.variable}`}
+    >
       <body className="flex min-h-dvh flex-col">
-        <Nav />
-        <div className="flex-1">{children}</div>
+        <SmoothScroll>
+          <Nav />
+          <div className="flex-1">{children}</div>
+          <ScrollReveals />
+        </SmoothScroll>
       </body>
     </html>
   );
