@@ -77,7 +77,7 @@ export default function Tools() {
   return (
     <section
       aria-label="Tools"
-      className="flex flex-col px-gutter py-12 lg:px-gutter-lg lg:py-[120px]"
+      className="flex flex-col px-gutter py-4 lg:px-gutter-lg lg:py-4"
     >
       <div className="flex w-full flex-col items-start gap-6 lg:flex-row lg:gap-6">
         <Reveal

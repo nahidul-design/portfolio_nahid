@@ -366,7 +366,11 @@ export default function CaseStudies() {
         gapClass="gap-3 lg:gap-6"
       />
 
-      <ThreeUpRow items={THREE_UP} />
+      <AccordionRow
+        items={TWO_UP}
+        aspect="aspect-[588/440]"
+        gapClass="gap-3 lg:gap-6"
+      />
     </section>
   );
 }
