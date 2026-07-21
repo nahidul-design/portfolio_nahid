@@ -1,5 +1,23 @@
 import Link from "next/link";
 
+function ArrowDown() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      className="size-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+    >
+      <path
+        d="M8 3v8.5M4.5 8.5L8 12l3.5-3.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function Nav() {
   return (
     <header className="sticky top-0 z-50 bg-page/90 backdrop-blur-sm">
@@ -7,29 +25,43 @@ export default function Nav() {
         data-reveal-group
         className="flex items-center justify-between px-gutter py-8 lg:px-gutter-lg"
       >
+        {/* group-hover on a child span, not hover: on the <a> itself: this
+            <a> is a direct child of the reveal-group above and GSAP writes
+            its transform/opacity during entrance. A hover state living
+            directly on the same element re-smooths those writes for as
+            long as the cursor sits there — the Discuss-button bug.
+            No link-underline here (unlike the Résumé link) — the wordmark
+            reads as a logo/mark, not a text link, so it keeps the subtle
+            lift nudge but not the underline draw. */}
         <Link
           href="/"
-          className="font-script text-2xl tracking-wordmark whitespace-nowrap text-ink"
+          className="group text-[32px] whitespace-nowrap text-ink"
         >
-          Nahidul Islam.
+          <span className="font-script tracking-wordmark inline-block transition-transform duration-300 group-hover:-translate-y-px">
+            Nahidul Islam.
+          </span>
         </Link>
 
-        {/* Hidden on mobile — it crowds the wordmark against the contact link. */}
+        {/* Hidden on mobile — it crowds the wordmark against the résumé link. */}
         <p className="hidden text-sm tracking-body whitespace-nowrap text-ink-muted md:block">
           Dhaka, Bangladesh — GMT+6
         </p>
 
-        <Link
-          href="#contact"
-          className="group flex flex-col gap-1 whitespace-nowrap"
+        {/* Same PDF-viewer behaviour as the résumé section's download pill —
+            opens the real file directly, no /résumé route to build. Already
+            full ink per Figma (no muted state), so only the underline-draw
+            and nudge apply; there's no color to shift. */}
+        <a
+          href="/resume.pdf"
+          target="_blank"
+          rel="noopener"
+          className="link-underline group flex items-center gap-1.5 whitespace-nowrap text-ink transition-transform duration-150 active:scale-95"
         >
-          {/* Uppercase UI labels carry no negative tracking — see globals.css. */}
-          <span className="text-base tracking-normal text-ink uppercase">
-            Contact
+          <span className="text-base tracking-normal uppercase transition-transform duration-300 group-hover:-translate-y-px">
+            Résumé
           </span>
-          {/* Rule is always present in the design, not a hover affordance. */}
-          <span className="h-px w-full bg-ink transition-opacity duration-300 group-hover:opacity-60" />
-        </Link>
+          <ArrowDown />
+        </a>
       </div>
     </header>
   );

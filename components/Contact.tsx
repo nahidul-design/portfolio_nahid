@@ -1,19 +1,27 @@
+import CopyEmailLink from "./CopyEmailLink";
 import Reveal from "./Reveal";
 
 /**
- * Contact (Figma 96:132) — giant "Let's talk.", email with a hover-reveal
- * underline, LinkedIn/WhatsApp with icons. `id="contact"` is load-bearing:
- * Nav's Contact link points at `#contact`.
+ * Contact (Figma 96:132) — giant "Let's talk.", click-to-copy email,
+ * LinkedIn/WhatsApp with icons. `id="contact"` is load-bearing: Nav's and
+ * Hero's Contact links both smooth-scroll here (see lib/scroll.ts).
  *
  * Two-step stagger (email, then the icon row) rather than three individual
  * items — mirrors Figma's own grouping, where LinkedIn+WhatsApp sit inside
  * one "Frame 16" container distinct from the email block.
  *
- * The underline lives on a child span with its own hover transition, never
- * on the <a> itself — the <a> is what the reveal-group animates, and putting
- * a same-property CSS transition directly on a reveal target is the
- * contention bug from the Discuss button. (This mirrors Nav's Contact link,
- * whose rule is a child span for the same reason.)
+ * LinkedIn/WhatsApp get a distinct treatment from the rest of the site's
+ * links: no underline — a soft rounded pill background fades in behind
+ * icon+label, the icon does a small scale+rotate, and the whole pill lifts
+ * 1px. All of it lives directly on the <a> (safe here: the reveal-group's
+ * actual target is the wrapping icon-row <div>, not these two <a> tags —
+ * they're grandchildren, so GSAP never writes inline styles to them).
+ * The negative margin/padding pairing lets the pill extend past the icon
+ * and label without shifting surrounding layout. One combined arbitrary
+ * `transition-[...]` utility, not separate transition-colors +
+ * transition-transform stacked — see the btn-liquid note in CLAUDE.md for
+ * why stacking Tailwind transition-* utilities is unsafe.
+ * CopyEmailLink keeps the underline treatment, unchanged.
  */
 function LinkedInIcon() {
   return (
@@ -47,38 +55,31 @@ export default function Contact() {
         group
         className="flex flex-col items-start gap-8 sm:flex-row sm:items-center sm:justify-between"
       >
-        <a
-          href="mailto:nahidul.design@gmail.com"
-          data-cursor="view"
-          className="group/email flex flex-col items-start gap-1.5"
-        >
-          <span className="text-2xl tracking-body text-ink">
-            nahidul.design@gmail.com
-          </span>
-          <span className="h-px w-full origin-left scale-x-0 bg-ink transition-transform duration-300 group-hover/email:scale-x-100" />
-        </a>
+        <CopyEmailLink />
 
         <div className="flex items-center gap-8">
           <a
-            href="https://www.linkedin.com/"
+            href="https://www.linkedin.com/in/muhammad-nahidul-islam-48041a120/"
             target="_blank"
             rel="noopener noreferrer"
-            className="group/li flex items-center gap-2"
+            className="group/li -mx-3 -my-2 flex items-center gap-2 rounded-full px-3 py-2 text-ink-muted transition-[color,background-color,transform] duration-300 hover:-translate-y-px hover:bg-ink/[0.07] hover:text-ink"
           >
-            <LinkedInIcon />
-            <span className="text-base tracking-body text-ink-muted transition-colors duration-300 group-hover/li:text-ink">
-              LinkedIn
+            <span className="inline-block transition-transform duration-300 group-hover/li:scale-110 group-hover/li:-rotate-[5deg]">
+              <LinkedInIcon />
             </span>
+            <span className="text-base tracking-body">LinkedIn</span>
           </a>
 
-          {/* wa.me placeholder — no phone number provided yet to build a
-              real deep link, so this stays "#" rather than shipping a wrong
-              or broken external URL. */}
-          <a href="#" className="group/wa flex items-center gap-2">
-            <WhatsAppIcon />
-            <span className="text-base tracking-body text-ink-muted transition-colors duration-300 group-hover/wa:text-ink">
-              WhatsApp
+          <a
+            href="https://wa.me/8801827007441"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group/wa -mx-3 -my-2 flex items-center gap-2 rounded-full px-3 py-2 text-ink-muted transition-[color,background-color,transform] duration-300 hover:-translate-y-px hover:bg-ink/[0.07] hover:text-ink"
+          >
+            <span className="inline-block transition-transform duration-300 group-hover/wa:scale-110 group-hover/wa:-rotate-[5deg]">
+              <WhatsAppIcon />
             </span>
+            <span className="text-base tracking-body">WhatsApp</span>
           </a>
         </div>
       </Reveal>

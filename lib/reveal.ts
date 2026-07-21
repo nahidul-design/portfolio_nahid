@@ -12,11 +12,17 @@ import { gsap } from "@/lib/gsap";
  *     timeline as the intro curtain clears
  */
 
-/** Default treatment: fade-blur-up. */
-export const REVEAL_FROM = { y: 18, autoAlpha: 0, filter: "blur(8px)" };
+/**
+ * Default treatment: fade-blur-up. Tuned to read as a slow, soft focus-pull
+ * rather than a flicker — the previous values (0.8s, 8px blur, 6px stagger)
+ * resolved fast enough, especially on a full group, that it read as a
+ * glitch instead of an intentional settle. Image reveals (below) key off
+ * REVEAL_DUR directly, so they stay proportionally in sync automatically.
+ */
+export const REVEAL_FROM = { y: 22, autoAlpha: 0, filter: "blur(15px)" };
 export const REVEAL_TO = { y: 0, autoAlpha: 1, filter: "blur(0px)" };
-export const REVEAL_DUR = 0.8;
-export const REVEAL_STAGGER = 0.06;
+export const REVEAL_DUR = 1.2;
+export const REVEAL_STAGGER = 0.09;
 export const REVEAL_EASE = "reveal"; // cubic-bezier(0.16,1,0.3,1)
 /** Fires once the element's top edge is 15% into the viewport. */
 export const REVEAL_START = "top 85%";

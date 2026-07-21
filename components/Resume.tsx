@@ -129,8 +129,8 @@ export default function Resume() {
           href="/resume.pdf"
           target="_blank"
           rel="noopener"
-          data-cursor="view"
-          className="btn-liquid inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-base tracking-normal text-page uppercase hover:opacity-85"
+          data-cursor="View"
+          className="btn-liquid inline-flex items-center gap-2 rounded-full bg-ink px-6 py-4 text-base tracking-normal text-page uppercase hover:opacity-85"
         >
           Download Résumé
           <ArrowDown />

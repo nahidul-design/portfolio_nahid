@@ -14,14 +14,17 @@ import {
 } from "@/lib/reveal";
 
 /**
- * The site-wide default reveal: every element fades in, rises ~18px, and
- * resolves from blur(8px) to sharp — felt more than seen. One treatment,
- * one ease ("reveal" = cubic-bezier(0.16,1,0.3,1), registered in lib/gsap),
- * applied through three attributes:
+ * The site-wide default reveal: every element fades in, rises, and resolves
+ * from a soft blur to sharp — a slow focus-pull, not a flicker. Exact
+ * numbers live in lib/reveal.ts (imported below, never redeclared here) —
+ * see REVEAL_FROM/REVEAL_DUR/REVEAL_STAGGER there rather than trusting a
+ * number in this comment to stay in sync. One ease ("reveal" =
+ * cubic-bezier(0.16,1,0.3,1), registered in lib/gsap), applied through
+ * three attributes:
  *
  *   data-reveal        the element reveals as one unit
- *   data-reveal-group  the element's direct children reveal in sequence,
- *                      60ms apart (rows of stats, nav links, meta cells…)
+ *   data-reveal-group  the element's direct children reveal in sequence
+ *                      (rows of stats, nav links, meta cells…)
  *   data-reveal-image  clipped frame unmasks while the <img> inside settles
  *                      from 1.08 → 1 (container must be overflow-hidden)
  *

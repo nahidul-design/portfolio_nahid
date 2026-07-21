@@ -8,12 +8,19 @@ import Reveal from "./Reveal";
  * NB: centred per the build request. The Figma frame has this block
  * left-aligned and full-width; flip `text-center`/`items-center` if the file
  * turns out to be the intended reference.
+ *
+ * Padding is deliberately asymmetric — not a Figma value, tuned entirely by
+ * eye against the rendered page. Bottom went through several rounds of
+ * optical correction against the quotation glyph's visual weight (×1.10,
+ * then ×1.2). Top was then cut by 50% on top of that: combined with
+ * CaseStudies' own bottom padding just above, the un-halved top gap read as
+ * too much stacked whitespace between the two sections.
  */
 export default function Quote() {
   return (
     <section
       aria-label="Quote"
-      className="px-gutter py-20 lg:px-gutter-lg lg:py-28"
+      className="px-gutter pt-[38px] pb-[106px] lg:px-gutter-lg lg:pt-[53px] lg:pb-[148px]"
     >
       <figure className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
         <Reveal

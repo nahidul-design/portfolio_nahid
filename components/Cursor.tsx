@@ -7,17 +7,31 @@ import { gsap } from "@/lib/gsap";
  * Site-wide custom cursor: a ~12px circle that trails the pointer with a
  * lerp-smoothed lag, morphing by what's underneath —
  *
- *   default            12px hollow circle
- *   data-cursor="view" grows to a filled "View" pill (fade-blur-up entrance)
- *   text / button      shrinks to a 5px dot
+ *   default                12px hollow circle
+ *   data-cursor="<label>"  grows to a filled pill showing that exact text
+ *                          (fade-blur-up entrance) — e.g. data-cursor="View"
+ *                          on a case-study card, data-cursor="Copy" on the
+ *                          email link. The attribute VALUE is the label, so
+ *                          any new element just sets its own text — nothing
+ *                          in this file names a specific label.
+ *   text / button          (no data-cursor) shrinks to a 5px dot
+ *
+ * Colour is theme-aware: the cursor defaults to ink (visible on the site's
+ * white base), but flips to white wherever it's over an element carrying
+ * `data-cursor-theme="dark"` (e.g. the UI Picker section's bg-ink band) —
+ * otherwise an ink-coloured cursor on an ink-coloured background is
+ * literally invisible. The pill label inverts too, so it stays readable
+ * against its own (also-flipped) pill background.
  *
  * Driven from the shared gsap.ticker, never a second rAF loop, so it stays in
  * lockstep with Lenis/ScrollTrigger (see SmoothScroll). Pointer-fine only:
  * touch and coarse pointers keep the native cursor and this never mounts.
  */
-type Variant = "default" | "view" | "shrink";
+type Variant = "default" | "pill" | "shrink";
 
 const LERP = 0.18; // per-frame follow weight at 60fps; dt-corrected below
+const INK = "#1b1e1f";
+const PAGE = "#ffffff";
 
 export default function Cursor() {
   const [enabled, setEnabled] = useState(false);
@@ -44,6 +58,9 @@ export default function Cursor() {
     const target = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     const pos = { ...target };
     let variant: Variant = "default";
+    let currentLabel = ""; // current pill text, so moving between two pill
+    // elements without leaving the cursor updates the text, not just variant
+    let isDark = false; // current background theme under the pointer
     let visible = false;
 
     // Centre the dot on the pointer via GSAP's own transform model, NOT a
@@ -62,37 +79,49 @@ export default function Cursor() {
         gsap.to(dot, { autoAlpha: 1, duration: 0.3 });
       }
 
-      // Resolve the morph from whatever sits under the pointer.
+      // Resolve the morph from whatever sits under the pointer. The
+      // data-cursor VALUE is the pill label — no label is hardcoded here.
       const el = (e.target as Element | null)?.closest?.(
         "[data-cursor], a, button, input, textarea, select, label",
       );
-      const next: Variant = !el
-        ? "default"
-        : el.getAttribute("data-cursor") === "view"
-          ? "view"
-          : "shrink";
+      const pillText = el?.getAttribute("data-cursor");
+      const next: Variant = !el ? "default" : pillText ? "pill" : "shrink";
+      const nextDark = !!(e.target as Element | null)?.closest?.(
+        '[data-cursor-theme="dark"]',
+      );
 
-      if (next !== variant) {
+      // Re-apply if the variant, theme, or (for a pill) the label changed.
+      if (
+        next !== variant ||
+        nextDark !== isDark ||
+        (next === "pill" && pillText !== currentLabel)
+      ) {
         variant = next;
-        applyVariant(next);
+        isDark = nextDark;
+        currentLabel = pillText ?? "";
+        applyVariant(next, currentLabel, nextDark);
       }
     };
 
-    const applyVariant = (v: Variant) => {
-      const isView = v === "view";
+    const applyVariant = (v: Variant, text: string, dark: boolean) => {
+      const isPill = v === "pill";
+      const fg = dark ? PAGE : INK; // the cursor's own "ink" colour, flipped
+      const labelColor = dark ? INK : PAGE; // inverse — sits on top of fg
+
       gsap.to(dot, {
-        width: isView ? 72 : v === "shrink" ? 5 : 12,
-        height: isView ? 72 : v === "shrink" ? 5 : 12,
-        backgroundColor:
-          isView || v === "shrink" ? "var(--color-ink)" : "transparent",
-        borderColor: isView ? "transparent" : "var(--color-ink)",
+        width: isPill ? 72 : v === "shrink" ? 5 : 12,
+        height: isPill ? 72 : v === "shrink" ? 5 : 12,
+        backgroundColor: isPill || v === "shrink" ? fg : "transparent",
+        borderColor: isPill ? "transparent" : fg,
         duration: 0.35,
         ease: "reveal",
       });
       if (label) {
-        // The "View" label uses the same fade-blur-up as the reveal system.
+        gsap.set(label, { color: labelColor });
+        // The pill label uses the same fade-blur-up as the reveal system.
         gsap.killTweensOf(label);
-        if (isView) {
+        if (isPill) {
+          label.textContent = text;
           gsap.fromTo(
             label,
             { autoAlpha: 0, y: 6, filter: "blur(6px)" },
@@ -143,14 +172,13 @@ export default function Cursor() {
       ref={dotRef}
       aria-hidden
       className="pointer-events-none invisible fixed top-0 left-0 z-[200] flex items-center justify-center rounded-full border will-change-transform"
-      style={{ width: 12, height: 12, borderColor: "var(--color-ink)" }}
+      style={{ width: 12, height: 12, borderColor: INK }}
     >
+      {/* Text and colour are set imperatively — see applyVariant. */}
       <span
         ref={labelRef}
-        className="invisible text-[11px] font-medium tracking-normal text-page uppercase"
-      >
-        View
-      </span>
+        className="invisible text-[11px] font-medium tracking-normal uppercase"
+      />
     </div>
   );
 }

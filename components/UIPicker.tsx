@@ -1,16 +1,26 @@
 import Link from "next/link";
 import Reveal from "./Reveal";
+import UIPickerBackground from "./UIPickerBackground";
 
 /**
- * UI Picker promo (Figma 96:115) — first dark band on the page (bg-ink),
- * headline + description left, CTA right. Links to /ui-picker; that route
- * doesn't exist yet, so this is a forward-wired link, not a working page.
+ * UI Picker promo (Figma 96:115) — first dark band on the page (bg-ink).
+ * Centered copy, centered CTA below — re-pulled from Figma, which moved off
+ * an earlier left-copy/right-arrow-button layout to this fully centered one
+ * and dropped the squiggle arrow next to the button entirely. Links to
+ * /404 — the actual /ui-picker game doesn't exist yet, so the CTA points at
+ * the site's "under construction" page instead of a dead route.
  *
- * The Figma background photo sits at 5% opacity purely as atmospheric
- * texture behind the copy — it's chrome, not content, so it's excluded from
- * the reveal system (same call as the hover-only gradient overlay on case
- * study cards): unmask-and-settle on a full-bleed decorative layer would
- * fight the copy's own reveal instead of reading as one entrance.
+ * `data-cursor-theme="dark"` on the section tells the custom cursor
+ * (Cursor.tsx) to swap to white here — its default ink colouring is
+ * invisible against this background otherwise.
+ *
+ * The background photo (UIPickerBackground) sits at low opacity purely as
+ * atmospheric texture behind the copy — it's chrome, not content, so it's
+ * excluded from the reveal system (same call as the hover-only gradient
+ * overlay on case study cards): unmask-and-settle on a full-bleed decorative
+ * layer would fight the copy's own reveal instead of reading as one
+ * entrance. It does get its own always-on ambient breathing + scroll
+ * parallax, independent of the reveal system — see that component.
  */
 function Gamepad() {
   return (
@@ -37,16 +47,18 @@ export default function UIPicker() {
   return (
     <section
       aria-label="UI Picker"
-      className="relative flex flex-col items-end gap-10 overflow-hidden bg-ink px-gutter py-20 lg:gap-16 lg:px-gutter-lg lg:py-28"
+      data-cursor-theme="dark"
+      className="relative flex flex-col items-center gap-[40px] overflow-hidden bg-ink px-gutter py-20 text-center lg:px-gutter-lg lg:py-[160px]"
     >
-      <img
-        src="/ui-picker/bg.png"
-        alt=""
-        aria-hidden
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-5"
-      />
+      <UIPickerBackground src="/ui-picker/bg.png" />
 
-      <Reveal group className="relative flex w-full flex-col items-start gap-4">
+      <Reveal
+        group
+        className="relative flex w-full flex-col items-center gap-3"
+      >
+        <p className="text-base tracking-normal text-white uppercase">
+          Gameplay
+        </p>
         <p className="font-display text-[clamp(1.75rem,3.6vw,2.75rem)] leading-[1.15] tracking-[-0.01em] uppercase">
           <span className="text-white/60">Think you </span>
           <span className="text-white">have a good eye?</span>
@@ -61,9 +73,9 @@ export default function UIPicker() {
           CLAUDE.md (also applied to the Hero and Résumé CTAs). */}
       <Reveal className="relative">
         <Link
-          href="/ui-picker"
-          data-cursor="view"
-          className="btn-liquid inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-base tracking-normal text-ink uppercase hover:opacity-85"
+          href="/404"
+          data-cursor="Play"
+          className="btn-liquid inline-flex items-center gap-2 rounded-full bg-white px-6 py-4 text-base tracking-normal text-ink uppercase hover:opacity-85"
         >
           Play now
           <Gamepad />

@@ -27,9 +27,14 @@ before implementing rather than guessing or reusing an old-system value.
 Three families, each with one job — verified against the actual Figma text
 nodes, not inferred.
 
-- **Kaushan Script** — wordmark only ("Nahidul Islam."). 24px, tracking
-  `-0.96px` (-4% at that size). Regular weight. Never used for anything else
-  on the site. *(verified: node `96:7`)*
+- **Square Peg** — wordmark only ("Nahidul Islam."), rendered via the
+  `--font-script` token in `app/fonts.ts`. 32px, tracking `-0.04em` (the same
+  `tracking-wordmark` token as before — it's em-based, so it scales with the
+  new size automatically rather than needing a re-derived px value). Regular
+  weight. Never used for anything else on the site. Superseded Kaushan Script
+  site-wide (Nav, HomeFooter, IntroLoader) per a later Figma pass — if you
+  find `Kaushan_Script` anywhere, it's stale. *(verified: node `173:104`
+  nav, `173:254` footer, `96:164`/`96:167` loader)*
 - **Instrument Serif** — display headings. Set in **uppercase**, tight
   tracking (`-1.92px` at 96px ≈ -2%). Regular weight — hierarchy comes from
   size, not weight, since this family has no meaningful bold. *(verified:
@@ -91,27 +96,62 @@ section; only case studies and 404 remain separate routes.
 
 Home, top to bottom:
 
-1. **Nav** — sticky, wordmark left (Kaushan Script), location text + Contact
-   link right. *(Figma: `01 Nav`, node `96:6`)*
+1. **Nav** — sticky, wordmark left (Kaushan Script), location text + a
+   Résumé link right that opens `/resume.pdf` in a new tab (was a Contact
+   link earlier in the build; Figma's own node changed to match). *(Figma:
+   `01 Nav`, node `96:6`)*
 2. **Hero** — *built.* [components/Hero.tsx](components/Hero.tsx): the
    Instrument Serif statement with an "Idea block" (copy + dark "Let's
    Discuss" pill) pinned top-right of the headline on `lg`, a three-column
    meta row, then the carousel. *(Figma: `96:12`, `96:74`)*
-3. **About** — *built.* [components/About.tsx](components/About.tsx): two
-   columns — bio (two-tone Instrument Serif), hairline, tools line; portrait
-   right. *(Figma: `About col`, node `96:156`)*
-4. **Case studies** — *built.* [components/CaseStudies.tsx](components/CaseStudies.tsx):
+3. **About** — *built.* [components/About.tsx](components/About.tsx): bio
+   (two-tone Instrument Serif) on the left; a two-layer scroll parallax on
+   the right via [components/AboutParallax.tsx](components/AboutParallax.tsx)
+   — see "About parallax" below. The old hairline + "figma • Framer • vibe
+   code" tools line under the bio is gone; that content now lives in its own
+   Tools section immediately after, so the two didn't stay duplicated.
+   *(Figma: `About col`, node `96:156`; parallax layers node `173:276`)*
+4. **Tools** — *built.* [components/Tools.tsx](components/Tools.tsx): a
+   Résumé-style label-left/rows-right table — Design / AI & Creative /
+   Process / Research — of 32px icon tiles at 60% opacity
+   ([components/ToolIcon.tsx](components/ToolIcon.tsx) handles the per-icon
+   hover: GSAP scale 1→1.12 + a slight vertical bob on `elastic.out`, not a
+   CSS transition, since it's driven by mouseenter/mouseleave rather than
+   the reveal system). Real brand marks come from `react-icons/si`
+   (simple-icons): Figma, Claude, Framer, ClickUp, Miro. simple-icons ships
+   neither an OpenAI/ChatGPT nor an Adobe Photoshop mark, so those two — plus
+   Magnific, Plane, and Maze, which aren't in the library at all — render as
+   a plain monochrome placeholder square (`PlaceholderIcon` in Tools.tsx).
+   Both icon paths carry `aria-hidden` on the mark itself (react-icons sets
+   its own `role="img"` on the `<svg>`; the placeholder would otherwise
+   double up too) since the enclosing `ToolIcon` span already owns the
+   accessible name via `role="img"`/`aria-label`. *(Figma: `05 Tools`, node
+   `175:2`)*
+5. **Case studies** — *built.* [components/CaseStudies.tsx](components/CaseStudies.tsx):
    the "Case studies" label plus all three showcase strips (full-width,
    two-up, three-up) in one component — the original spec's separate "work
    index" entry point and "three showcase strips" item were built combined,
    since the label and strips read as one section on the page. Cards are
-   `/work/[slug]` links with hover scale/gradient/caption-shift. *(Figma:
-   `Frame 10`, node `96:25`, showcases at `96:30`/`96:37`/`96:52` — still
-   placeholder "Ledger" cover art repeated across dummy projects)*
-5. **Testimonial** — *built.* [components/Quote.tsx](components/Quote.tsx).
+   `/work/[slug]` links with hover scale/gradient/caption-shift. Caption is
+   one line — title left, `Category — Year` right, muted — with a tight
+   `gap-3` between image and caption (was a stacked two-line caption with a
+   looser gap). *(Figma: `Frame 10`, node `96:25`, showcases at
+   `96:30`/`96:37`/`96:52` — still placeholder "Ledger" cover art repeated
+   across dummy projects)*
+   - **Mobile accordion**: below `lg` (`AccordionRow` in CaseStudies.tsx),
+     the two-up and three-up rows are tap-driven — the first tap on an
+     inactive item expands it toward ~half the row (a second tap, now
+     active, navigates); every item springs back to an even split once
+     nothing's active. Sizing uses `flex-grow` against a **0% flex-basis**,
+     not a percentage basis — a percentage basis double-counts the row's
+     `gap` against 100% and can overflow/wrap. `isMobile` is tracked via
+     `matchMedia("(max-width: 1023px)")`; above that the accordion is inert
+     (every item keeps the same weight) and the row reads as a plain even
+     split, same as before.
+6. **Testimonial** — *built.* [components/Quote.tsx](components/Quote.tsx).
    *(Figma: `Frame 2`, node `96:161` — it's a Steve Jobs quote, not an
    original manifesto; kept the attribution)*
-6. **Résumé** — *built.* [components/Resume.tsx](components/Resume.tsx):
+7. **Résumé** — *built.* [components/Resume.tsx](components/Resume.tsx):
    label-left/content-right Experience and Education rows, hairlines between
    jobs, Download Résumé pill linking to `/resume.pdf` (byte-verified
    placeholder — real xref offsets, opens in any viewer). Built as its own
@@ -119,23 +159,72 @@ Home, top to bottom:
    combined "About + experience" section, but was built across two separate
    turns as two components. If a single merged section is still wanted,
    this needs revisiting. *(Figma: `07 Résumé`, node `96:82`)*
-7. **UI Picker promo** — *built.* [components/UIPicker.tsx](components/UIPicker.tsx).
-   First dark (`bg-ink`) band on the page. Links to `/ui-picker`, which
-   doesn't exist yet — forward-wired only. *(Figma: `10 UI Picker`, node
-   `96:115`)*
-8. **Contact** — *built.* [components/Contact.tsx](components/Contact.tsx).
-   `id="contact"` is load-bearing — Nav's Contact link points at `#contact`.
-   WhatsApp link is `href="#"`, no real number provided yet. *(Figma:
-   `11 Contact`, node `96:132`)*
-9. **Footer** — *built.* [components/HomeFooter.tsx](components/HomeFooter.tsx) —
-   named `HomeFooter`, not `Footer`: `components/Footer.tsx` is the v1
-   component still used by the stale `/about`, `/work/[slug]`, and
-   `not-found` routes: overwriting it would have silently broken them.
-   *(Figma: `12 Footer`, node `96:151`)*
+8. **UI Picker promo** — *built.* [components/UIPicker.tsx](components/UIPicker.tsx).
+   First dark (`bg-ink`) band on the page. A "Gameplay" eyebrow (Barlow 16px
+   uppercase white) sits above the heading; the CTA now points at `/404`
+   rather than the still-unbuilt `/ui-picker` route — see
+   [app/404/page.tsx](app/404/page.tsx) below for why that's a real route
+   file, not just a bare URL relying on the not-found fallback.
+   The background photo's ambient breathing + scroll parallax
+   ([components/UIPickerBackground.tsx](components/UIPickerBackground.tsx))
+   was deliberately turned up from a barely-visible first pass — see "UI
+   Picker background" below. *(Figma: `10 UI Picker`, node `96:115`,
+   updated container/spacing at `173:210`, CTA at `173:217`)*
+9. **Contact** — *built.* [components/Contact.tsx](components/Contact.tsx).
+   `id="contact"` is load-bearing — Hero's "Let's Discuss" smooth-scrolls
+   here via [lib/scroll.ts](lib/scroll.ts) (Nav's own link was later changed
+   to a direct Résumé download, not a Contact link — see the Nav entry
+   above). Email is click-to-copy
+   ([components/CopyEmailLink.tsx](components/CopyEmailLink.tsx)); LinkedIn
+   and WhatsApp are real links. *(Figma: `11 Contact`, node `96:132`)*
+10. **Footer** — *built.* [components/HomeFooter.tsx](components/HomeFooter.tsx) —
+    named `HomeFooter`, not `Footer`: `components/Footer.tsx` is the v1
+    component still used by the stale `/about` and `/work/[slug]` routes
+    (the custom 404 was rebuilt onto v2 and now reuses `HomeFooter` too —
+    see the 404 section below): overwriting `Footer.tsx` would have
+    silently broken the two routes still on it. *(Figma: `12 Footer`, node
+    `96:151`)*
 
 **Home page is now fully assembled**, [app/page.tsx](app/page.tsx) —
-Nav (root layout) → Hero → About → Case studies → Testimonial → Résumé →
-UI Picker → Contact → PenguinSlot → HomeFooter.
+Nav (root layout) → Hero → About → Tools → Case studies → Testimonial →
+Résumé → UI Picker → Contact → PenguinSlot → HomeFooter.
+
+### About
+
+[components/About.tsx](components/About.tsx) /
+[components/AboutParallax.tsx](components/AboutParallax.tsx) — re-pulled
+after Figma moved from a side-by-side bio-left/portrait-right layout (the
+original build) to a full-bleed overlay card (node `173:276`, "Frame 26"):
+centered "About me" eyebrow + two-tone bio pinned to the top, over a
+rounded `img-radius` 1200×800 card whose Background photo fills it (plus a
+`from-page to-page/20` scrim gradient so the text stays legible against
+sky) and whose Object (subject cutout) sits bottom-anchored and
+horizontally centered at 36%×72% of the card. **If you ever see the old
+side-by-side layout referenced anywhere (including in your own memory of
+this project), it's stale — this overlay-card version is current.**
+
+Both image layers are oversized/offset the same way as
+UIPickerBackground's ambient parallax (`h-[120%]`, `top: -10%`) so their
+`yPercent` scroll travel never reveals empty space at the container edge.
+Each runs its own `gsap.fromTo(...yPercent...)` scrubbed straight to scroll
+position via `ScrollTrigger` (`scrub: true`, no easing lag — a direct scrub
+is what keeps two independently-moving layers from drifting out of sync
+with each other or the actual scroll position). Background travels ±6%
+(slower, reads as far), Object ±9% (faster, reads as floating above it).
+The background additionally gets a slow always-on breathing scale
+(`sine.inOut` yoyo, ~10s cycle) — **on a separate wrapper `<div>`, not the
+`<img>` itself**: the card is deliberately NOT a `data-reveal-image` target
+(it's atmospheric chrome behind centered copy, same call as
+UIPickerBackground, not content of its own), but an earlier version of this
+breathing effect targeted the `<img>` directly while it was still a reveal
+target, and the reveal's own one-off entrance scale tween fought the
+continuous breathe tween over the same `transform` property forever after —
+two GSAP tweens on one element, not the GSAP-vs-CSS-transition contention
+CLAUDE.md usually warns about, but the same underlying failure mode. Keep
+the breathe on its own element if this component changes again.
+
+`AboutPortrait.tsx`, the original hover-tilt single-portrait component this
+superseded, was deleted — nothing references it.
 
 Note the Figma canvas Y-order doesn't exactly match this list (e.g. About
 sits before the showcase strips on the canvas, and Résumé sits after the
@@ -166,15 +255,18 @@ acquisition — no Club GreenSock licence, no separate package.
 [components/Cursor.tsx](components/Cursor.tsx). A ~12px circle trailing the
 pointer with a dt-corrected lerp, driven from the **shared** `gsap.ticker`
 (never a second rAF loop). Morphs by reading the element under the pointer:
-`data-cursor="view"` grows to a filled "View" pill with the fade-blur-up
-entrance; `a`/`button`/inputs shrink to a 5px dot; otherwise a hollow circle.
-Native cursor is hidden via `@media (pointer: fine) and (hover: hover)` in
-globals.css — the component itself also only mounts when `(pointer: fine)`,
-so touch/coarse devices keep their native cursor and this never renders.
-Position is written with `gsap.quickSetter(..., "x"/"y")` (the `transform`
-property); the element's `-translate-1/2` centering uses the separate
-`translate` property, so the two compose instead of overwriting each other.
-Any element that should trigger the "View" pill gets `data-cursor="view"`.
+`data-cursor="<label>"` grows to a filled pill showing that exact text with
+the fade-blur-up entrance — the attribute VALUE is the label (`"View"` on
+case-study cards and the résumé/UI-Picker CTAs, `"Copy"` on the email link),
+so **Cursor.tsx never hardcodes a specific label**; a new element just sets
+its own. `a`/`button`/inputs with no `data-cursor` shrink to a 5px dot;
+otherwise a hollow circle. Native cursor is hidden via
+`@media (pointer: fine) and (hover: hover)` in globals.css — the component
+itself also only mounts when `(pointer: fine)`, so touch/coarse devices keep
+their native cursor and this never renders. Position is written with
+`gsap.quickSetter(..., "x"/"y")` (the `transform` property); the element's
+`-translate-1/2` centering uses the separate `translate` property, so the
+two compose instead of overwriting each other.
 
 ### Hero carousel
 
@@ -206,8 +298,16 @@ working:
 ### Intro loader
 
 [components/IntroLoader.tsx](components/IntroLoader.tsx), rendered from the
-home page. Plays on **every load** (deliberately no first-visit gating — an
-earlier sessionStorage version was removed on request). Pacing: pill holds
+**root layout** ([app/layout.tsx](app/layout.tsx)), not the home page — it
+used to live in `app/page.tsx`, which meant clicking the logo (a plain Link)
+back to `/` from any other route remounted the home page component and
+replayed the intro. The root layout only mounts once per real navigation
+(first visit or a browser reload) and persists across client-side route
+changes, so living there makes the intro naturally play once per real page
+load and never on an internal Link click — no sessionStorage flag needed
+(an earlier sessionStorage-gated version was removed on request; this
+achieves the same "not on every click" outcome by mount lifetime instead of
+a stored flag). Pacing: pill holds
 1.2s → collapses to the 56×56 mark over 0.5s → 0.9s clip-path curtain lift,
 with the hero words starting 250ms before the curtain clears (~2.6s total).
 Click accelerates via `timeScale(4)` — never jump-cut. Reduced motion skips
@@ -229,9 +329,12 @@ Two registers, deliberately distinct:
   [components/ScrollReveals.tsx](components/ScrollReveals.tsx) (mounted in
   the root layout, re-binds on route change). Every element — cards,
   paragraphs, labels, meta text, stats, tabs, dividers, buttons — reveals
-  the same way: `y:18, opacity:0, blur(8px)` → neutral, 0.8s, ease
+  the same way: `y:22, opacity:0, blur(15px)` → neutral, 1.2s, ease
   `"reveal"` (= `cubic-bezier(0.16,1,0.3,1)`, registered as a CustomEase in
-  [lib/gsap.ts](lib/gsap.ts)). Triggers once at 15% into the viewport;
+  [lib/gsap.ts](lib/gsap.ts)) — tuned deliberately slow so it reads as a
+  soft focus-pull, not a flicker; a faster/subtler first pass (0.8s, 8px
+  blur) resolved too quickly to register, especially across a stagger
+  group. Triggers once at 15% into the viewport;
   above-fold elements fire on load. The tween ends with
   `clearProps: "filter,transform"` so settled elements don't keep paying for
   a `blur(0px)` compositor layer. Reduced motion bails out entirely
@@ -270,9 +373,10 @@ Two registers, deliberately distinct:
 > animate.
 >
 > Spec, for reference (already encoded in the utility — don't re-enter these
-> numbers anywhere): opacity 0→1, translateY 18px→0, blur(8px)→0, 0.8s,
+> numbers anywhere, and don't quietly drift back toward faster/subtler ones):
+> opacity 0→1, translateY 22px→0, blur(15px)→0, 1.2s,
 > `cubic-bezier(0.16,1,0.3,1)`, ScrollTrigger once at 15% into view,
-> ~60ms stagger for groups.
+> ~90ms stagger for groups.
 >
 > **The only exception** is the hero headline, which keeps its own
 > word-by-word liquid reveal (`[data-hero-word]`, driven by the intro
@@ -302,7 +406,58 @@ Two registers, deliberately distinct:
 Buttons: pills use the `btn-liquid` utility (globals.css) — colour shift plus
 a squish-then-settle scale overshoot on hover and a press compress. On a
 fully-rounded pill a border-radius "squish" is invisible (radius already at
-max), so the give is expressed through asymmetric scale instead.
+max), so the give is expressed through asymmetric scale instead. Never stack
+a Tailwind `transition-*` utility on a `btn-liquid` element — both set the
+full `transition` shorthand and the second one silently wins, breaking the
+squish; use plain `hover:`/`active:` state utilities and let `btn-liquid`'s
+own shorthand animate them. Padding is `px-6 py-4` on every filled pill
+(Discuss, Download Résumé, UI Picker CTA) — was `px-5 py-3`, sized up to
+match Figma. The Discuss button's icon (Hero.tsx) changed from a bespoke
+north-east arrow to the same `ArrowDown` glyph used by the Nav/Résumé
+downloads, wrapped in a `<div className="-rotate-90 flex-none">` so it reads
+as pointing right — reuse that glyph rather than re-adding a one-off SVG if
+another CTA needs a directional arrow.
+
+**Image radius**: every image container site-wide (hero carousel cards,
+case-study covers, the About parallax layers) shares one `img-radius`
+utility (globals.css, `border-radius: 2px`) — small and near-square per
+Figma. Add it to any new image container rather than setting a radius value
+inline; the single utility is what keeps the value from drifting per
+instance.
+
+Text links (nav Résumé, footer wordmark, email in Contact) share the
+`link-underline` utility (globals.css) — a `::after` pseudo-element that
+draws left-to-right via `scaleX`, safe to put directly on any element
+including a reveal target, since it only ever animates its own pseudo-element
+box, never the host's own transform/opacity. The colour shift and translateY
+nudge that go with it are plain `hover:`/`group-hover:` utilities layered on
+top — but **only** as `group-hover:` on a child span when the link itself is
+a direct `data-reveal-group` child (CopyEmailLink, the nav/footer wordmark);
+a hover-transform utility directly on a reveal-target element re-triggers on
+every hover and fights GSAP's one-time entrance write, same failure mode as
+`btn-liquid`.
+
+LinkedIn/WhatsApp in Contact.tsx deliberately do **not** use
+`link-underline` — a different, later request gave them their own
+treatment: a soft rounded pill background (`hover:bg-ink/[0.07]`) fades in
+behind icon+label via negative margin/padding, the icon scales and rotates
+slightly, the whole pill lifts 1px. All directly on the `<a>`, which is safe
+here since the reveal-group's real child is their wrapping `<div>`, not each
+`<a>`. One combined arbitrary `transition-[color,background-color,transform]`
+utility — never stack separate `transition-colors` + `transition-transform`,
+same shorthand-collision risk as `btn-liquid` above.
+
+### UI Picker background
+
+[components/UIPickerBackground.tsx](components/UIPickerBackground.tsx)'s
+ambient breathing (scale) + scroll parallax (yPercent) on the section's
+full-bleed photo was tuned up from a first pass that read as barely-there:
+`BREATHE_SCALE` 1.03→1.12, `BREATHE_LEG` 4.5s→3s (a full yoyo cycle is now
+~6s, was ~9s), `PARALLAX_RANGE` 7→14 (yPercent, relative to the image's own
+120% height), and the image opacity itself 5%→10%. Same mechanism as
+before (always-on, not hover-triggered — see the component's own comment)
+— only the constants changed, so the "seamless, no edge-revealing" guarantee
+from the 120%-height/`-10%`-top oversizing still holds at the wider range.
 
 ## `/work/[slug]` — case study template
 
@@ -338,10 +493,34 @@ components with different content, not bespoke markup per project.
 
 ## 404
 
-Custom, not a generic Next.js fallback: nav (wordmark + Contact, no
-back-link), then centered "404" in display type, a one-line message ("This
-page doesn't exist — but the work does."), and a "Back home" link with an
-arrow icon. *(verified structure: node `99:27`)*
+[app/not-found.tsx](app/not-found.tsx) — rebuilt onto v2 (the previous file
+imported the dead v1 `Footer`/`NavLink` components and referenced tokens
+that don't exist in v2's `globals.css`, e.g. `text-2xs`, `tracking-ui`,
+`ease-editorial` — it rendered broken). Structure: a giant `font-display`
+"404." heading, a one-line message, a "Back home" link with an arrow icon,
+then `HomeFooter` (reused rather than standing up a third footer variant —
+it's already v2-token-based and carries no home-specific logic beyond its
+own copy). **No local nav here** — an earlier version rendered its own
+wordmark+Contact header, which doubled up with the site-wide `<Nav />` the
+root layout already renders on every route; removed, so this page relies
+entirely on the global nav (which means it shows the standard
+wordmark/location/Résumé nav, not a Figma-specific wordmark+Contact
+variant — a single correct nav beats a pixel-exact duplicate one). The
+message is **"This page is under construction — check back soon."** (was
+"This page doesn't exist — but the work does.") — needed to read as "not
+built yet," not "doesn't exist," since both the UI Picker CTA and every
+case-study card (`CaseStudies.tsx`) link here now, the real destinations
+not being built yet. *(verified structure: node `99:27`)*
+
+**[app/404/page.tsx](app/404/page.tsx) is a real route file**, not just a
+bare URL relying on the catch-all fallback — it exists purely so
+`<Link href="/404">` can resolve client-side. Without a matching
+`page.tsx`, Next can't soft-navigate to an arbitrary unmatched path and
+falls back to a full browser reload, which remounts the root layout —
+including the intro loader, which then replayed on every case-study click.
+The route file just calls `notFound()`, handing the actual rendering back
+to `app/not-found.tsx` so the UI still lives in exactly one place; it only
+exists to make the navigation itself soft.
 
 ## Content model
 
@@ -371,3 +550,19 @@ painted). Prefer:
   proof, and don't run a production build (`next build`) against a live dev
   server on the same port, since it can overwrite the dev server's `.next`
   output and kill it.
+- The same `visibilityState: "hidden"` root cause also makes **synthetic
+  `dispatchEvent(new MouseEvent("click", …))` calls unreliable** as a stand-in
+  for a real user click/tap — confirmed again while verifying the case-study
+  mobile accordion (a dispatched click on a `Link` produced no state change
+  even though the handler is plain React state with no GSAP/rAF dependency).
+  For interactions gated behind `data-reveal`/GSAP, prefer checking DOM
+  structure and computed values (element presence, `aria-*`, class names,
+  computed styles) over trying to force the interaction live in this pane.
+
+**Icon library**: `react-icons` (the `si` — simple-icons — subpath) is
+installed for the Tools section's brand marks. Before wiring a new icon,
+confirm the export actually exists in the installed version — `SiOpenai`,
+`SiAdobephotoshop`, and any Anthropic/Claude-adjacent alternates beyond
+`SiClaude` may not be present; check with a quick
+`node -e "console.log(typeof require('react-icons/si').SiWhatever)"` rather
+than assuming a simple-icons brand has react-icons coverage.

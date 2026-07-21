@@ -171,6 +171,7 @@ export default function IntroLoader() {
       ref={overlayRef}
       onClick={() => tlRef.current?.timeScale(4)}
       aria-hidden="true"
+      data-cursor-theme="dark"
       className="fixed inset-0 z-[100] flex cursor-pointer items-center justify-center bg-ink"
     >
       <div
@@ -179,7 +180,7 @@ export default function IntroLoader() {
       >
         <p
           ref={textRef}
-          className="font-script text-2xl leading-none tracking-wordmark whitespace-nowrap text-white"
+          className="font-script text-[32px] leading-none tracking-wordmark whitespace-nowrap text-white"
         >
           Nahidul Islam.
         </p>

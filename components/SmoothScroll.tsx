@@ -4,6 +4,10 @@ import { useEffect } from "react";
 import Lenis from "lenis";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 
+/** Module-level singleton — lib/scroll.ts reads this to call lenis.scrollTo()
+ *  from anywhere (Nav, Hero, …) without prop-drilling the instance. */
+export const lenisRef: { current: Lenis | null } = { current: null };
+
 /**
  * Drives Lenis manually through gsap.ticker instead of Lenis's own rAF loop
  * (autoRaf: false) — this is the standard Lenis+GSAP integration: one shared
@@ -18,6 +22,7 @@ export default function SmoothScroll({
 }) {
   useEffect(() => {
     const lenis = new Lenis({ autoRaf: false });
+    lenisRef.current = lenis;
 
     lenis.on("scroll", ScrollTrigger.update);
 
@@ -30,6 +35,7 @@ export default function SmoothScroll({
     return () => {
       gsap.ticker.remove(tick);
       lenis.destroy();
+      lenisRef.current = null;
     };
   }, []);
 

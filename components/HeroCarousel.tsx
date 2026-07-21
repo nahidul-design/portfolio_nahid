@@ -193,7 +193,7 @@ export default function HeroCarousel() {
             <div
               key={`${copy}-${i}`}
               data-card
-              className="relative aspect-[588/440] w-[clamp(260px,42vw,588px)] shrink-0 overflow-hidden will-change-transform"
+              className="img-radius relative aspect-[588/440] w-[clamp(260px,42vw,588px)] shrink-0 overflow-hidden will-change-transform"
             >
               <img
                 src={image.src}

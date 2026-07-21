@@ -1,6 +1,7 @@
+import ContactLink from "./ContactLink";
 import HeroCarousel from "./HeroCarousel";
 
-function ArrowNorthEast() {
+function ArrowDown() {
   return (
     <svg
       viewBox="0 0 16 16"
@@ -10,11 +11,10 @@ function ArrowNorthEast() {
       stroke="currentColor"
     >
       <path
-        d="M6.125 9.875L9.875 6.125M9.875 8.9375V6.125H7.0625"
+        d="M8 3v8.5M4.5 8.5L8 12l3.5-3.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path d="M1.75 8C1.75 5.05372 1.75 3.58058 2.66529 2.66529C3.58058 1.75 5.05372 1.75 8 1.75C10.9462 1.75 12.4194 1.75 13.3347 2.66529C14.25 3.58058 14.25 5.05372 14.25 8C14.25 10.9462 14.25 12.4194 13.3347 13.3347C12.4194 14.25 10.9462 14.25 8 14.25C5.05372 14.25 3.58058 14.25 2.66529 13.3347C1.75 12.4194 1.75 10.9462 1.75 8Z" />
     </svg>
   );
 }
@@ -78,13 +78,12 @@ export default function Hero() {
                   element makes the CSS transition fight every frame — the
                   button rendered stuck in a washed-out mid-state. */}
               <div className="mt-4">
-                <a
-                  href="#contact"
-                  className="btn-liquid inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-base tracking-normal text-page uppercase hover:opacity-85"
-                >
+                <ContactLink className="btn-liquid inline-flex items-center gap-2 rounded-full bg-ink px-6 py-4 text-base tracking-normal text-page uppercase hover:opacity-85">
                   Let&rsquo;s Discuss
-                  <ArrowNorthEast />
-                </a>
+                  <div className="-rotate-90 flex-none">
+                    <ArrowDown />
+                  </div>
+                </ContactLink>
               </div>
             </div>
           </div>
