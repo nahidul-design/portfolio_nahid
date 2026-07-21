@@ -25,10 +25,11 @@ export default function Quote() {
       <figure className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
         <Reveal
           as="blockquote"
-          className="font-display text-[clamp(1.75rem,4vw,3rem)] leading-[1.2] tracking-[-0.01em] text-ink-muted"
+          className="font-display text-[clamp(1.75rem,4vw,3rem)] leading-[1.2] tracking-[-0.01em] text-ink"
         >
-          &ldquo;Design is not just what it looks like and feels like. Design is
-          how it works&rdquo;
+          &ldquo;Design is not just what it looks like and feels like,
+          <br />
+          Design is how it works&rdquo;
         </Reveal>
 
         <Reveal

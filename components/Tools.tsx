@@ -99,7 +99,7 @@ export default function Tools() {
                   {row.label}
                 </Reveal>
 
-                <Reveal group className="flex items-center gap-3">
+                <Reveal group className="flex items-center gap-4">
                   {row.tools.map((tool) => (
                     <ToolIcon
                       key={tool.src}
