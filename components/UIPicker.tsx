@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Reveal from "./Reveal";
 import UIPickerBackground from "./UIPickerBackground";
+import { withBasePath } from "@/lib/assets";
 
 /**
  * UI Picker promo (Figma 96:115) — first dark band on the page (bg-ink).
@@ -50,7 +51,7 @@ export default function UIPicker() {
       data-cursor-theme="dark"
       className="relative flex flex-col items-center gap-[40px] overflow-hidden bg-ink px-gutter py-20 text-center lg:px-gutter-lg lg:py-[160px]"
     >
-      <UIPickerBackground src="/ui-picker/bg.png" />
+      <UIPickerBackground src={withBasePath("/ui-picker/bg.png")} />
 
       <Reveal
         group

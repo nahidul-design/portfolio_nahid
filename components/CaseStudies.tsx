@@ -46,11 +46,13 @@ type Showcase = {
   image: string;
 };
 
+import { withBasePath } from "@/lib/assets";
+
 const FULL: Showcase = {
   slug: "test-taker",
   name: "Test Taker",
   category: "Online exam tool",
-  image: "/showcase/test-taker.webp",
+  image: withBasePath("/showcase/test-taker.webp"),
 };
 
 const TWO_UP: Showcase[] = [
@@ -58,13 +60,13 @@ const TWO_UP: Showcase[] = [
     slug: "bag-flyer",
     name: "Bag Flyer",
     category: "P2P delivery platform",
-    image: "/showcase/bag-flyer.webp",
+    image: withBasePath("/showcase/bag-flyer.webp"),
   },
   {
     slug: "relivery",
     name: "Relivery",
     category: "Appliances rental service",
-    image: "/showcase/relivery.webp",
+    image: withBasePath("/showcase/relivery.webp"),
   },
 ];
 
@@ -73,13 +75,13 @@ const THREE_UP: Showcase[] = [
     slug: "kotha",
     name: "Kotha",
     category: "Social media app",
-    image: "/showcase/kotha.webp",
+    image: withBasePath("/showcase/kotha.webp"),
   },
   {
     slug: "revup",
     name: "RevUp",
     category: "Landing Page",
-    image: "/showcase/revup.webp",
+    image: withBasePath("/showcase/revup.webp"),
   },
 ];
 

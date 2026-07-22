@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import Footer from "@/components/Footer";
 import ProjectNav from "@/components/ProjectNav";
+import { withBasePath } from "@/lib/assets";
 import {
   CATEGORY_LABELS,
   getAllProjects,
@@ -46,7 +47,7 @@ export default async function WorkPage({ params }: Params) {
               full length instead of being cropped. */}
           <div className="lg:w-[440px] lg:shrink-0 xl:w-[520px]">
             <img
-              src={project.detailImage}
+              src={withBasePath(project.detailImage)}
               alt={`${project.title} — detail screenshot`}
               className="h-auto w-full rounded-sm border border-line"
             />

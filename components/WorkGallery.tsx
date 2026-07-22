@@ -12,6 +12,7 @@ import {
   type Variants,
 } from "motion/react";
 import type { ProjectCard } from "@/lib/projects";
+import { withBasePath } from "@/lib/assets";
 
 export interface GalleryBatch {
   label: string;
@@ -179,7 +180,7 @@ function GalleryCard({
             >
               {/* Title/subtitle live inside the artwork, bottom-left. */}
               <img
-                src={project.coverImage}
+                src={withBasePath(project.coverImage)}
                 alt={project.title}
                 className="aspect-[3/4] w-full object-cover"
               />

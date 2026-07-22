@@ -2,13 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Draggable, gsap } from "@/lib/gsap";
+import { withBasePath } from "@/lib/assets";
 
-const IMAGES = [
-  { src: "/hero/gallery-1.png", alt: "Editorial site design shown on a laptop" },
-  { src: "/hero/gallery-2.png", alt: "Interior brand site shown on a laptop" },
-  { src: "/hero/gallery-3.png", alt: "Product interface work" },
-  { src: "/hero/gallery-4.png", alt: "Studio site design detail" },
-];
+const IMAGES = Array.from({ length: 12 }, (_, index) => ({
+  src: withBasePath(`/hero/gallery-${index + 1}.webp`),
+  alt: `Hero carousel image ${index + 1}`,
+}));
 
 /** px/s the row drifts on its own. */
 const DRIFT_SPEED = 42;
