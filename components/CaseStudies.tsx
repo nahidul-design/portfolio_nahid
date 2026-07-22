@@ -47,45 +47,39 @@ type Showcase = {
 };
 
 const FULL: Showcase = {
-  slug: "ledger",
-  name: "Ledger",
-  category: "Carbon emission dashboard",
-  image: "/showcase/screen-1.png",
+  slug: "test-taker",
+  name: "Test Taker",
+  category: "Online exam tool",
+  image: "/showcase/test-taker.webp",
 };
 
 const TWO_UP: Showcase[] = [
   {
-    slug: "atlas",
-    name: "Ledger",
-    category: "Web application",
-    image: "/hero/gallery-2.png",
+    slug: "bag-flyer",
+    name: "Bag Flyer",
+    category: "P2P delivery platform",
+    image: "/showcase/bag-flyer.webp",
   },
   {
-    slug: "meridian",
-    name: "Ledger",
-    category: "Landing page",
-    image: "/hero/gallery-3.png",
+    slug: "relivery",
+    name: "Relivery",
+    category: "Appliances rental service",
+    image: "/showcase/relivery.webp",
   },
 ];
 
 const THREE_UP: Showcase[] = [
   {
-    slug: "pulse",
-    name: "Ledger",
+    slug: "kotha",
+    name: "Kotha",
     category: "Social media app",
-    image: "/hero/gallery-1.png",
+    image: "/showcase/kotha.webp",
   },
   {
-    slug: "tidal",
-    name: "Ledger",
-    category: "Sports app",
-    image: "/hero/gallery-4.png",
-  },
-  {
-    slug: "vitals",
-    name: "Ledger",
-    category: "Tracking app",
-    image: "/showcase/screen-1.png",
+    slug: "revup",
+    name: "RevUp",
+    category: "Landing Page",
+    image: "/showcase/revup.webp",
   },
 ];
 
@@ -367,7 +361,7 @@ export default function CaseStudies() {
       />
 
       <AccordionRow
-        items={TWO_UP}
+        items={THREE_UP}
         aspect="aspect-[588/440]"
         gapClass="gap-3 lg:gap-6"
       />
