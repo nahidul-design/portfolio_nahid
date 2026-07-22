@@ -16,10 +16,7 @@ const DRIFT_SIGN = 1;
 /** Seconds for the drift to ease in/out on hover. Spec: ~0.6s, never a hard stop. */
 const SPEED_EASE = 0.6;
 
-const MAX_SKEW = 9; // deg
 const MAX_SCALE_X = 0.04;
-/** ~1500px/s (a firm flick) maps to roughly the full skew allowance. */
-const VELOCITY_TO_SKEW = 1 / 170;
 const VELOCITY_TO_SCALE = 1 / 34000;
 /** Per-frame lerp weight at 60fps; corrected for real dt below. */
 const SMOOTHING = 0.1;
@@ -32,7 +29,6 @@ export default function HeroCarousel() {
   const offsetRef = useRef(0);
   const prevOffsetRef = useRef(0);
   const setWidthRef = useRef(0);
-  const skewRef = useRef(0);
   const scaleRef = useRef(1);
 
   const [copies, setCopies] = useState(3);
@@ -78,7 +74,6 @@ export default function HeroCarousel() {
       track.querySelectorAll<HTMLElement>("[data-card]"),
     );
     const setTrackX = gsap.quickSetter(track, "x", "px");
-    const setSkew = cards.map((c) => gsap.quickSetter(c, "skewX", "deg"));
     const setScaleX = cards.map((c) => gsap.quickSetter(c, "scaleX"));
 
     /* Tweened rather than snapped, so hover decelerates instead of stopping. */
@@ -121,7 +116,10 @@ export default function HeroCarousel() {
       },
     });
 
-    const onEnter = () => easeSpeedTo(0);
+    const onEnter = () => {
+      easeSpeedTo(0);
+    };
+
     const onLeave = () => {
       if (!reduced) easeSpeedTo(DRIFT_SPEED);
     };
@@ -147,21 +145,14 @@ export default function HeroCarousel() {
         dt > 0 ? (offsetRef.current - prevOffsetRef.current) / dt : 0;
       prevOffsetRef.current = offsetRef.current;
 
-      const targetSkew = gsap.utils.clamp(
-        -MAX_SKEW,
-        MAX_SKEW,
-        velocity * VELOCITY_TO_SKEW,
-      );
       const targetScaleX =
         1 + Math.min(Math.abs(velocity) * VELOCITY_TO_SCALE, MAX_SCALE_X);
 
       // dt-corrected lerp, so smoothing feels the same at 60 and 144Hz.
       const t = 1 - Math.pow(1 - SMOOTHING, dt * 60);
-      skewRef.current += (targetSkew - skewRef.current) * t;
       scaleRef.current += (targetScaleX - scaleRef.current) * t;
 
       for (let i = 0; i < cards.length; i++) {
-        setSkew[i](skewRef.current);
         setScaleX[i](scaleRef.current);
       }
     };
@@ -175,7 +166,7 @@ export default function HeroCarousel() {
       section.removeEventListener("mouseenter", onEnter);
       section.removeEventListener("mouseleave", onLeave);
       // Leave cards neutral if this remounts.
-      cards.forEach((c) => gsap.set(c, { skewX: 0, scaleX: 1 }));
+      cards.forEach((c) => gsap.set(c, { scaleX: 1 }));
     };
   }, [copies, reduced]);
 
@@ -184,7 +175,7 @@ export default function HeroCarousel() {
       ref={sectionRef}
       aria-label="Selected work"
       data-reveal
-      className="w-full cursor-grab overflow-hidden select-none active:cursor-grabbing"
+      className="w-full overflow-hidden select-none"
     >
       <div ref={trackRef} className="flex w-max gap-6 will-change-transform">
         {Array.from({ length: copies }).flatMap((_, copy) =>
@@ -192,16 +183,18 @@ export default function HeroCarousel() {
             <div
               key={`${copy}-${i}`}
               data-card
-              className="img-radius relative aspect-[588/440] w-[clamp(260px,42vw,588px)] shrink-0 overflow-hidden will-change-transform"
+              className="group img-radius relative aspect-[588/440] w-[clamp(260px,42vw,588px)] shrink-0 overflow-hidden will-change-transform"
             >
-              <img
-                src={image.src}
-                // Only the first set is announced; the rest are visual repeats.
-                alt={copy === 0 ? image.alt : ""}
-                aria-hidden={copy > 0}
-                draggable={false}
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-              />
+              <div className="h-full w-full transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]">
+                <img
+                  src={image.src}
+                  // Only the first set is announced; the rest are visual repeats.
+                  alt={copy === 0 ? image.alt : ""}
+                  aria-hidden={copy > 0}
+                  draggable={false}
+                  className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+                />
+              </div>
             </div>
           )),
         )}

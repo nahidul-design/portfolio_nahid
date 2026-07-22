@@ -49,9 +49,11 @@ export default function NotFound() {
 
         <Reveal
           as="p"
-          className="max-w-[440px] text-base leading-[1.4] tracking-body text-ink-muted"
+          className="max-w-[520px] text-base leading-[1.4] tracking-body text-ink-muted"
         >
-          This page is under construction — check back soon.
+          This page is currently under construction and will be
+          <br />
+          launched on <span className="text-ink">July 25th at 16:00 UTC.</span>
         </Reveal>
 
         <Reveal>
