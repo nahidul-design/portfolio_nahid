@@ -81,6 +81,29 @@ export default function IntroLoader() {
     tl.set(owned, REVEAL_FROM, 0);
     tl.call(() => images.forEach(setImageRevealFrom), [], 0);
 
+    // Give the logo frame a more natural breath right before the collapse:
+    // a quick 100% -> 120% pulse that lands directly into the square-shrink.
+    tl.to(
+      pillRef.current,
+      {
+        scale: 1.12,
+        duration: 0.22,
+        ease: "power1.inOut",
+        transformOrigin: "center center",
+      },
+      0.95,
+    );
+    tl.to(
+      pillRef.current,
+      {
+        scale: 1,
+        duration: 0.18,
+        ease: "power1.inOut",
+        transformOrigin: "center center",
+      },
+      1.17,
+    );
+
     // Hold ~1.2s, then collapse: text out first, box down to the bare mark.
     tl.to(textRef.current, { opacity: 0, duration: 0.2 }, 1.2);
     tl.to(
