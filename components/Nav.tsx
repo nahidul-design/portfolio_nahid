@@ -23,7 +23,7 @@ export default function Nav() {
     <header className="sticky top-0 z-50 bg-page/90 backdrop-blur-sm">
       <div
         data-reveal-group
-        className="flex items-center justify-between px-gutter py-8 lg:px-gutter-lg"
+        className="flex items-center justify-between px-gutter py-5 lg:px-gutter-lg"
       >
         {/* group-hover on a child span, not hover: on the <a> itself: this
             <a> is a direct child of the reveal-group above and GSAP writes
