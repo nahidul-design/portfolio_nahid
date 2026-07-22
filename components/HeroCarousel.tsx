@@ -10,9 +10,9 @@ const IMAGES = Array.from({ length: 12 }, (_, index) => ({
 }));
 
 /** px/s the row drifts on its own. */
-const DRIFT_SPEED = 42;
-/** -1 sends the row left→right. Flip to 1 for right→left — nothing else changes. */
-const DRIFT_SIGN = -1;
+const DRIFT_SPEED = 50;
+/** 1 sends the row right→left. Flip to -1 for left→right — nothing else changes. */
+const DRIFT_SIGN = 1;
 /** Seconds for the drift to ease in/out on hover. Spec: ~0.6s, never a hard stop. */
 const SPEED_EASE = 0.6;
 
