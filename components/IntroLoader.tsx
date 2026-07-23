@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { gsap } from "@/lib/gsap";
 import {
   addImageRevealTo,
@@ -35,6 +36,9 @@ import {
  * prefers-reduced-motion skips straight to the hero.
  */
 export default function IntroLoader() {
+  const pathname = usePathname();
+  // Only run the intro on the root landing page
+  if (pathname !== "/") return null;
   const [done, setDone] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
