@@ -32,6 +32,19 @@ export default function RestoreHomeScroll() {
         /* already restored — a leftover key just means a harmless re-read */
       }
     }
+
+    // When the home page unmounts (navigating away via client-side Link),
+    // save the current scroll position so RestoreHomeScroll on re-entry
+    // can put the user back where they left off. On a full reload the
+    // root `ScrollRestoration` effect clears this key, so reloads always
+    // start at the hero/top as desired.
+    return () => {
+      try {
+        sessionStorage.setItem(HOME_SCROLL_KEY, String(window.scrollY));
+      } catch {
+        /* sessionStorage unavailable — nothing to persist */
+      }
+    };
   }, []);
 
   return null;
