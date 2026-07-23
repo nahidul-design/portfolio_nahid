@@ -1,7 +1,6 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 import { gsap } from "@/lib/gsap";
 import {
   addImageRevealTo,
@@ -36,9 +35,6 @@ import {
  * prefers-reduced-motion skips straight to the hero.
  */
 export default function IntroLoader() {
-  const pathname = usePathname();
-  // Only run the intro on the root landing page
-  if (pathname !== "/") return null;
   const [done, setDone] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
@@ -46,6 +42,23 @@ export default function IntroLoader() {
   const tlRef = useRef<gsap.core.Timeline | null>(null);
 
   useLayoutEffect(() => {
+    // Gate the intro on the client-side pathname to avoid server/client
+    // rendering mismatches. If not on the root path, skip the intro.
+    if (typeof window !== "undefined") {
+      try {
+        const fullPath = window.location.pathname || "/";
+        const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
+        const relative = base && fullPath.startsWith(base)
+          ? fullPath.slice(base.length) || "/"
+          : fullPath;
+        if (relative !== "/") {
+          setDone(true);
+          return;
+        }
+      } catch (e) {
+        // If anything goes wrong, fall back to showing the intro.
+      }
+    }
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setDone(true);
       return;
