@@ -1,9 +1,11 @@
 import Reveal from "./Reveal";
 
 /**
- * Quote (Figma 96:161). Instrument Serif at the dimmed 60% ink, with the
- * attribution in Barlow beneath — sentence case, so it can't be a heading
- * (the base layer uppercases those).
+ * Quote (Figma 96:161). Instrument Serif at full ink (not the 60% dim used
+ * elsewhere for de-emphasised display lines — this quote reads as a single
+ * statement, not a two-tone heading), with the attribution in Barlow
+ * beneath — sentence case, so it can't be a heading (the base layer
+ * uppercases those).
  *
  * NB: centred per the build request. The Figma frame has this block
  * left-aligned and full-width; flip `text-center`/`items-center` if the file

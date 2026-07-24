@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Draggable, gsap } from "@/lib/gsap";
 import { withBasePath } from "@/lib/assets";
+import HeroLightbox from "./HeroLightbox";
 
 const IMAGES = Array.from({ length: 12 }, (_, index) => ({
   src: withBasePath(`/hero/gallery-${index + 1}.webp`),
@@ -33,6 +34,11 @@ export default function HeroCarousel() {
 
   const [copies, setCopies] = useState(3);
   const [reduced, setReduced] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  /** Read at click-time to skip opening the lightbox after a drag/throw
+   *  release — Draggable's trigger is the whole section, so a card's click
+   *  handler fires after every drag too, not just a genuine tap. */
+  const draggableRef = useRef<Draggable | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -98,7 +104,7 @@ export default function HeroCarousel() {
       lastProxyX = x;
     };
 
-    const draggables = Draggable.create(proxy, {
+    const draggables: Draggable[] = Draggable.create(proxy, {
       type: "x",
       trigger: section,
       inertia: true,
@@ -115,6 +121,7 @@ export default function HeroCarousel() {
         if (!reduced && !section.matches(":hover")) easeSpeedTo(DRIFT_SPEED);
       },
     });
+    draggableRef.current = draggables[0];
 
     const onEnter = () => {
       easeSpeedTo(0);
@@ -162,6 +169,7 @@ export default function HeroCarousel() {
     return () => {
       gsap.ticker.remove(tick);
       draggables.forEach((d) => d.kill());
+      draggableRef.current = null;
       gsap.killTweensOf(speed);
       section.removeEventListener("mouseenter", onEnter);
       section.removeEventListener("mouseleave", onLeave);
@@ -180,25 +188,41 @@ export default function HeroCarousel() {
       <div ref={trackRef} className="flex w-max gap-6 will-change-transform">
         {Array.from({ length: copies }).flatMap((_, copy) =>
           IMAGES.map((image, i) => (
-            <div
+            <button
               key={`${copy}-${i}`}
+              type="button"
               data-card
-              className="group img-radius relative aspect-[588/440] w-[clamp(260px,42vw,588px)] shrink-0 overflow-hidden will-change-transform"
+              data-cursor="Zoom"
+              // Only the first set is announced/focusable; the rest are
+              // visual repeats of the same content, same as the old <img>
+              // alt/aria-hidden split.
+              aria-hidden={copy > 0}
+              tabIndex={copy > 0 ? -1 : 0}
+              onClick={() => {
+                if (draggableRef.current?.isDragging) return;
+                setLightboxIndex(i);
+              }}
+              className="group img-radius relative aspect-[588/440] w-[clamp(260px,42vw,588px)] shrink-0 cursor-zoom-in overflow-hidden text-left will-change-transform"
             >
               <div className="h-full w-full transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]">
                 <img
                   src={image.src}
-                  // Only the first set is announced; the rest are visual repeats.
                   alt={copy === 0 ? image.alt : ""}
-                  aria-hidden={copy > 0}
                   draggable={false}
                   className="pointer-events-none absolute inset-0 h-full w-full object-cover"
                 />
               </div>
-            </div>
+            </button>
           )),
         )}
       </div>
+
+      <HeroLightbox
+        images={IMAGES}
+        index={lightboxIndex}
+        onClose={() => setLightboxIndex(null)}
+        onChangeIndex={setLightboxIndex}
+      />
     </section>
   );
 }

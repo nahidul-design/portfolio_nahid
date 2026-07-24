@@ -294,6 +294,38 @@ working:
 - `prefers-reduced-motion` is handled in JS via `useReducedMotion`-style
   matchMedia: no drift, no skew/scale, **drag still works**. The CSS block in
   globals.css does not cover GSAP.
+- Each card is a `<button data-cursor="Zoom">`; clicking one (when not
+  mid-drag — guarded by `draggableRef.current?.isDragging`) opens the
+  lightbox below.
+
+### Hero lightbox (zoom modal)
+
+[components/HeroLightbox.tsx](components/HeroLightbox.tsx) — the full-screen
+image viewer opened from a carousel card. Design was rebuilt on request:
+no control panel, just a prev/next arrow floated at each screen edge; wheel
+zooms, drag pans.
+
+- **Background scroll lock is `lenisRef.current.stop()`, NOT `overflow:
+  hidden`.** The page scrolls via Lenis through `gsap.ticker` (see
+  SmoothScroll), so a body-overflow style does nothing — Lenis keeps
+  translating the page under the modal. That was the "page scrolls behind
+  the modal" bug. The wheel listener also `preventDefault`s (it's
+  non-passive, added via `addEventListener`, since React's onWheel can't
+  reliably preventDefault) as a second guard.
+- **Two transform layers, never sharing one element** (the CLAUDE.md
+  contention rule, GSAP-vs-GSAP here): the STAGE wrapper owns open/close +
+  the prev/next directional slide-fade (`reveal` ease, swap at the trough
+  while invisible so there's no flash); the IMG owns zoom+pan, driven by a
+  dt-corrected lerp on the shared `gsap.ticker` toward a wheel/drag-updated
+  target (same mechanism as Cursor.tsx) so it eases rather than snapping.
+- Wheel zoom is **toward the cursor**, not the frame centre —
+  `offset2 = p − (p − offset)·(s2/s)` keeps the point under the pointer
+  fixed. Scale clamps 1×–4×; pan clamps to `±(s−1)·half-frame` so the image
+  can't be dragged past the edges; dropping back to 1× recentres.
+- `index` (from HeroCarousel) is the *requested* image; the modal keeps its
+  own `displayIndex` that lags during a transition so the outgoing image
+  stays until the incoming one is swapped in at opacity 0. Reduced motion
+  skips every tween (instant swaps, instant zoom via `k = 1`).
 
 ### Intro loader
 

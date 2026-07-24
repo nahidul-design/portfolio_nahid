@@ -119,11 +119,11 @@ type Accordion = {
   isMobile: boolean;
   onActivate: () => void;
   onHover?: () => void;
-  /** Defaults to a springy overshoot bezier, right for a one-off tap. A
-   *  hover-driven row re-triggers far more often as the cursor moves card
-   *  to card, where that much bounce reads as jittery rather than lively —
-   *  ThreeUpRow overrides this to the sitewide "reveal" ease instead
-   *  (`cubic-bezier(0.16,1,0.3,1)`, no overshoot, still not linear-stiff). */
+  /** Defaults to the sitewide "reveal" ease — fast start, decelerating,
+   *  no overshoot. A springy overshoot bezier was tried first but read as
+   *  bouncy/jittery, especially on rows like ThreeUpRow that re-trigger
+   *  every time the cursor moves from card to card, not just on a one-off
+   *  tap. */
   easing?: string;
 };
 
@@ -157,7 +157,7 @@ function Strip({
               // alone decide each item's share of the already-gap-reduced
               // free space.
               flex: `${accordion.growWeight} 0 0%`,
-              transition: `flex-grow 450ms ${accordion.easing ?? "cubic-bezier(0.34, 1.56, 0.64, 1)"}`,
+              transition: `flex-grow 450ms ${accordion.easing ?? "cubic-bezier(0.16, 1, 0.3, 1)"}`,
             }
           : undefined
       }
