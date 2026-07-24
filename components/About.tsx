@@ -33,8 +33,8 @@ export default function About() {
         background="/about/parallax-bg.png"
         object="/about/parallax-obj.png"
         eyebrow="About me"
-        bio="Product designer based in Bangladesh"
-        bioMuted=". I design software that people understand on the first try, and hand off specs that actually get built."
+        bio="Product designer based in Dhaka"
+        bioMuted=". I design software  that people understand on the first try, and hand off specs which actually get built."
       />
     </section>
   );
