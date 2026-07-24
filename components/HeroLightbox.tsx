@@ -204,6 +204,10 @@ export default function HeroLightbox({
       let delta = e.deltaY;
       if (e.deltaMode === 1) delta *= 16; // line
       else if (e.deltaMode === 2) delta *= 800; // page
+      // Trackpad pinch-to-zoom is reported as a wheel event with ctrlKey
+      // set and a very small deltaY — without amplifying it, a pinch
+      // barely moves the scale at all.
+      if (e.ctrlKey) delta *= 8;
 
       const s = target.current.s;
       const steps = -delta / 120; // 120 ≈ one physical wheel notch
@@ -320,26 +324,36 @@ export default function HeroLightbox({
     // The clone carries whatever zoom/pan the outgoing image had; the real
     // img resets to 1×/centred for the incoming picture.
     gsap.set(clone, { x: cur.current.x, y: cur.current.y, scale: cur.current.s });
-    flushSync(() => setDisplayIndex(index));
-    resetTransform(true);
-    gsap.set(outgoing, { autoAlpha: 0, xPercent: dir === "next" ? 8 : -8 });
 
-    const tl = gsap.timeline({
-      onComplete: () => {
-        clone.remove();
-        transitioningRef.current = false;
-      },
+    // flushSync CANNOT run synchronously here — this whole callback is
+    // still inside a useEffect, i.e. still inside React's commit phase, and
+    // React throws ("cannot flush while already rendering") if flushSync is
+    // called from that context. Deferring to the next frame moves it
+    // outside React's commit entirely; one frame (~16ms) is imperceptible
+    // and the clone is already painted in its start state by then, so
+    // there's no visible gap.
+    requestAnimationFrame(() => {
+      flushSync(() => setDisplayIndex(index));
+      resetTransform(true);
+      gsap.set(outgoing, { autoAlpha: 0, xPercent: dir === "next" ? 8 : -8 });
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+          clone.remove();
+          transitioningRef.current = false;
+        },
+      });
+      tl.to(
+        clone,
+        { autoAlpha: 0, xPercent: dir === "next" ? -8 : 8, duration: 0.32, ease: "power2.in" },
+        0,
+      );
+      tl.to(
+        outgoing,
+        { autoAlpha: 1, xPercent: 0, duration: 0.45, ease: "reveal" },
+        0.08,
+      );
     });
-    tl.to(
-      clone,
-      { autoAlpha: 0, xPercent: dir === "next" ? -8 : 8, duration: 0.32, ease: "power2.in" },
-      0,
-    );
-    tl.to(
-      outgoing,
-      { autoAlpha: 1, xPercent: 0, duration: 0.45, ease: "reveal" },
-      0.08,
-    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
