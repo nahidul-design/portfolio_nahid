@@ -11,8 +11,9 @@ import { lenisRef } from "./SmoothScroll";
  * screen edge — no control panel.
  *
  * Interaction model (built to feel like a native image viewer):
- *   - WHEEL over the modal zooms, toward the cursor (not the frame centre),
- *     1×–4×.
+ *   - WHEEL over the modal zooms, centred (re-centres unless the user has
+ *     already panned), 1×–4×, with a dynamic minimum so the image never
+ *     zooms out smaller than the frame.
  *   - DRAG pans the zoomed image, clamped so it can't leave the frame.
  *   - Escape / backdrop click closes; ← → navigate.
  *
@@ -23,41 +24,38 @@ import { lenisRef } from "./SmoothScroll";
  * place in the DOM tree — a pointerdown anywhere in the modal still bubbled
  * up through that section, so Draggable (listening on the section) picked
  * it up as a drag on the *carousel*, not the modal image. Portaling out to
- * body removes it from that ancestry entirely, which is the correct fix
- * (not just an event.stopPropagation patch — the modal has no business
- * being a DOM descendant of the carousel section at all).
+ * body removes it from that ancestry entirely.
  *
- * The wheel listener is also registered `capture: true` and calls
- * `stopPropagation`, not just `preventDefault` — Lenis (mounted much
- * higher, in the root layout) listens for wheel on window too, and without
- * capture+stopPropagation there's a real race over which handler resolves
- * the event first depending on registration order.
+ * The wheel listener is registered on `window` with `capture: true` and
+ * calls `stopPropagation` — Lenis (mounted much higher, in the root layout)
+ * listens for wheel on window too, and capture+stopPropagation is what
+ * reliably wins that race regardless of registration order.
  *
  * The background scroll lock is `lenis.stop()`, NOT `overflow: hidden` — the
  * page is scrolled by Lenis through gsap.ticker (see SmoothScroll), so an
  * overflow style on <body> does nothing; Lenis keeps translating the page.
- * This was the "page scrolls behind the modal" bug.
  *
  * Two transform layers, kept separate so they never fight over one element's
  * transform (the CLAUDE.md contention rule, here GSAP-vs-GSAP):
- *   - the STAGE wrapper owns the open/close + prev/next slide-fade
- *     (directional, "reveal" ease) — a discrete, tweened transition.
+ *   - the STAGE wrapper owns the open/close tween.
  *   - the IMG owns zoom+pan, driven every frame by a dt-corrected lerp on
  *     the shared gsap.ticker (same mechanism as Cursor.tsx) so it eases
  *     toward the wheel/drag target instead of snapping.
  *
- * The prev/next swap uses `flushSync` around the `displayIndex` update
- * inside the GSAP timeline callback — without it, React's render (which
- * swaps the <img src>) can land a frame or two after the fade-in tween has
- * already started, so the new image visibly snaps in mid-fade instead of
- * fading in clean. flushSync forces that render to commit synchronously
- * before the entrance tween begins.
+ * Prev/next clones the OUTGOING image into a temporary absolutely-positioned
+ * layer that animates out on its own, while the real <img> swaps `src` (via
+ * `flushSync`, so that commits before the fade-in starts) and animates in
+ * underneath — two independent layers crossfading, rather than one element
+ * trying to be both at once. This replaced an earlier version that paused
+ * the timeline on `img.decode()` and resumed in a `.then()`: decode timing
+ * is sensitive to caching/CORS/compression and behaved differently between
+ * local dev and the Vercel-served build, occasionally leaving the timeline
+ * paused indefinitely — this version has no async dependency in the tween
+ * chain at all.
  */
 const SCALE_MIN = 1;
 const SCALE_MAX = 4;
-/** Multiplicative zoom per wheel notch — exp() keeps each step feeling equal
- *  regardless of current scale. */
-const WHEEL_SENSITIVITY = 0.0015;
+const SCALE_PER_WHEEL_STEP = 1.12;
 /** Per-frame follow weight at 60fps; dt-corrected in the ticker. */
 const LERP = 0.2;
 
@@ -101,10 +99,6 @@ export default function HeroLightbox({
   const frameRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const reducedRef = useRef(false);
-  const debugRef = useRef(true);
-  const [dbg, setDbg] = useState({ cx: 0, cy: 0, cs: 1, tx: 0, ty: 0, ts: 1 });
-  const lastDeltaRef = useRef(0);
-  const setZoomedFlag = (s: number) => setZoomed(s > 1.001);
 
   // Zoom/pan state — refs, not React state, so wheel/drag never re-render.
   const cur = useRef({ x: 0, y: 0, s: 1 });
@@ -142,7 +136,7 @@ export default function HeroLightbox({
       setRendered(false);
       return;
     }
-    gsap.to(stage, { autoAlpha: 0, y: 8, scale: 0.98, duration: 0.25, ease: "power2.in" });
+    gsap.to(stage, { autoAlpha: 0, scale: 0.98, duration: 0.25, ease: "power2.in" });
     gsap.to(overlay, {
       autoAlpha: 0,
       duration: 0.3,
@@ -160,22 +154,21 @@ export default function HeroLightbox({
     if (!overlay || !stage) return;
 
     if (reducedRef.current) {
-      gsap.set([overlay, stage], { autoAlpha: 1, scale: 1, xPercent: 0 });
+      gsap.set([overlay, stage], { autoAlpha: 1, scale: 1 });
       return;
     }
     gsap.set(overlay, { autoAlpha: 0 });
-    gsap.set(stage, { autoAlpha: 0, scale: 0.96, xPercent: 0, y: -8 });
+    gsap.set(stage, { autoAlpha: 0, scale: 0.96 });
     gsap.to(overlay, { autoAlpha: 1, duration: 0.3, ease: "power2.out" });
-    gsap.to(stage, { autoAlpha: 1, scale: 1, y: 0, duration: 0.5, ease: "reveal" });
+    gsap.to(stage, { autoAlpha: 1, scale: 1, duration: 0.5, ease: "reveal" });
   }, [rendered, index]);
 
   // Zoom/pan interaction + the ticker lerp that renders it. Runs while open.
   useEffect(() => {
     if (!rendered) return;
-    const overlay = overlayRef.current;
     const frame = frameRef.current;
     const img = imgRef.current;
-    if (!overlay || !frame || !img) return;
+    if (!frame || !img) return;
 
     const quickX = gsap.quickSetter(img, "x", "px");
     const quickY = gsap.quickSetter(img, "y", "px");
@@ -195,49 +188,33 @@ export default function HeroLightbox({
       return { x: Math.max(0, ((s - 1) * r.width) / 2), y: Math.max(0, ((s - 1) * r.height) / 2) };
     };
     const clamp = (v: number, max: number) => Math.max(-max, Math.min(max, v));
+    const setZoomedFlag = (s: number) => setZoomed(s > 1.001);
 
     const onWheel = (e: WheelEvent) => {
-      if (debugRef.current) console.debug("HeroLightbox:onWheel", { deltaY: e.deltaY, deltaMode: e.deltaMode, ctrl: e.ctrlKey });
       // preventDefault blocks the page scroll; stopPropagation stops it
-      // from ever reaching Lenis's own window-level wheel listener, which
-      // is registered independently of this modal (see file header) — a
-      // capture-phase + stopPropagation listener is the only way to
-      // reliably win that race regardless of registration order.
+      // from ever reaching Lenis's own window-level wheel listener (see
+      // file header) — capture-phase + stopPropagation is what reliably
+      // wins that race regardless of registration order.
       e.preventDefault();
       e.stopPropagation();
       if (transitioningRef.current) return;
 
+      // Normalize across deltaMode so trackpad/wheel/precision devices
+      // step by roughly the same felt amount.
       let delta = e.deltaY;
-      // Normalize across deltaMode: 0=pixel,1=line,2=page
-      if (e.deltaMode === 1) delta = delta * 16;
-      else if (e.deltaMode === 2) delta = delta * 800;
-      // If pinch-to-zoom reports with ctrlKey, amplify for better feel
-      if (e.ctrlKey) delta *= 10;
-      lastDeltaRef.current = delta;
+      if (e.deltaMode === 1) delta *= 16; // line
+      else if (e.deltaMode === 2) delta *= 800; // page
 
       const s = target.current.s;
-      // Compute a dynamic minimum scale so the image always at least fills
-      // the frame (100% of container). Use natural dimensions when available.
-      const r = frame.getBoundingClientRect();
-      let fitScale = SCALE_MIN;
-      try {
-        const nw = img.naturalWidth || 0;
-        const nh = img.naturalHeight || 0;
-        if (nw && nh) {
-          fitScale = Math.max(r.width / nw, r.height / nh);
-        }
-      } catch {
-        fitScale = SCALE_MIN;
-      }
-      // Convert delta into discrete steps for predictable zoom across devices.
-      // Smaller delta produces smaller step fraction.
-      const step = -delta / 120; // 120 is a typical mouse-wheel unit
-      const SCALE_PER_STEP = 1.12;
-      const s2candidate = s * Math.pow(SCALE_PER_STEP, step);
-      const s2 = gsap.utils.clamp(Math.max(fitScale, SCALE_MIN), SCALE_MAX, s2candidate);
+      const steps = -delta / 120; // 120 ≈ one physical wheel notch
+      const s2 = gsap.utils.clamp(
+        SCALE_MIN,
+        SCALE_MAX,
+        s * Math.pow(SCALE_PER_WHEEL_STEP, steps),
+      );
       if (s2 === s) return;
 
-      // Center-anchored zoom: keep image centered unless user has panned.
+      // Re-centres unless the user has already panned away from centre.
       let nx = 0;
       let ny = 0;
       if (Math.abs(target.current.x) > 2 || Math.abs(target.current.y) > 2) {
@@ -248,7 +225,6 @@ export default function HeroLightbox({
       nx = clamp(nx, b.x);
       ny = clamp(ny, b.y);
       target.current = { x: nx, y: ny, s: s2 };
-      if (debugRef.current) console.debug("HeroLightbox:target", target.current, { fitScale, step, s2candidate });
       setZoomedFlag(s2);
     };
 
@@ -259,7 +235,6 @@ export default function HeroLightbox({
     let startOffY = 0;
 
     const onPointerDown = (e: PointerEvent) => {
-      if (debugRef.current) console.debug("HeroLightbox:onPointerDown", { x: e.clientX, y: e.clientY });
       if (transitioningRef.current || e.button !== 0) return;
       // Belt-and-braces alongside the portal move (see file header) — this
       // gesture is a pan on the modal image, never anything ancestor
@@ -288,27 +263,17 @@ export default function HeroLightbox({
       }
     };
 
-    const tick = (_t: number, dtSec: number) => {
-      const k = reducedRef.current ? 1 : 1 - Math.pow(1 - LERP, dtSec * 60);
+    const tick = (_t: number, dtMs: number) => {
+      const k = reducedRef.current ? 1 : 1 - Math.pow(1 - LERP, (dtMs / 1000) * 60);
       cur.current.x += (target.current.x - cur.current.x) * k;
       cur.current.y += (target.current.y - cur.current.y) * k;
       cur.current.s += (target.current.s - cur.current.s) * k;
       applyNow();
-      // Update debug overlay at ~10fps
-      if (debugRef.current) {
-        ;(tick as any)._acc = ((tick as any)._acc || 0) + dtSec;
-        if ((tick as any)._acc > 0.1) {
-          (tick as any)._acc = 0;
-          setDbg({ cx: Math.round(cur.current.x), cy: Math.round(cur.current.y), cs: Number(cur.current.s.toFixed(2)), tx: Math.round(target.current.x), ty: Math.round(target.current.y), ts: Number(target.current.s.toFixed(2)) });
-        }
-      }
     };
 
-    // Attach wheel on window and overlay in capture so we reliably receive
-    // wheel events even if Lenis or a descendant listener would otherwise
-    // intercept them. We still stopPropagation inside the handler.
+    // Single listener, on window, capture phase — see file header for why
+    // this needs to win the race against Lenis's own wheel listener.
     window.addEventListener("wheel", onWheel, { passive: false, capture: true });
-    overlay.addEventListener("wheel", onWheel, { passive: false, capture: true });
     frame.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", endDrag);
@@ -316,7 +281,6 @@ export default function HeroLightbox({
 
     return () => {
       window.removeEventListener("wheel", onWheel, true);
-      overlay.removeEventListener("wheel", onWheel, true);
       frame.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", endDrag);
@@ -324,8 +288,9 @@ export default function HeroLightbox({
     };
   }, [rendered]);
 
-  // Prev/next: a directional slide-fade on the STAGE wrapper, swapping the
-  // rendered image at the trough (while it's invisible, so no flash).
+  // Prev/next: clone the outgoing image into its own layer that fades+slides
+  // out independently, while the real <img> swaps src (flushSync, so the
+  // DOM commits before the tween starts) and fades+slides in underneath.
   const shownRef = useRef(index);
   useEffect(() => {
     if (index === null) {
@@ -337,62 +302,44 @@ export default function HeroLightbox({
     if (prevShown === null || prevShown === index) return; // open, not a nav
 
     const dir = index === (prevShown + 1) % images.length ? "next" : "prev";
-    const stage = stageRef.current;
+    const frame = frameRef.current;
+    const outgoing = imgRef.current;
 
-    if (!stage || reducedRef.current) {
+    if (!frame || !outgoing || reducedRef.current) {
       setDisplayIndex(index);
       resetTransform(true);
       return;
     }
 
     transitioningRef.current = true;
+    const clone = outgoing.cloneNode(true) as HTMLImageElement;
+    clone.style.position = "absolute";
+    clone.style.inset = "0";
+    frame.appendChild(clone);
+
+    // The clone carries whatever zoom/pan the outgoing image had; the real
+    // img resets to 1×/centred for the incoming picture.
+    gsap.set(clone, { x: cur.current.x, y: cur.current.y, scale: cur.current.s });
+    flushSync(() => setDisplayIndex(index));
+    resetTransform(true);
+    gsap.set(outgoing, { autoAlpha: 0, xPercent: dir === "next" ? 8 : -8 });
+
     const tl = gsap.timeline({
       onComplete: () => {
+        clone.remove();
         transitioningRef.current = false;
       },
     });
-    // Use a cloned outgoing image so we can animate it independently
-    // while the real <img> swaps its src. This avoids timing races.
-    const frame = frameRef.current;
-    const outgoing = imgRef.current;
-    let clone: HTMLImageElement | null = null;
-    if (frame && outgoing) {
-      clone = outgoing.cloneNode(true) as HTMLImageElement;
-      clone.style.position = "absolute";
-      clone.style.inset = "0";
-      clone.style.willChange = "opacity,transform";
-      frame.appendChild(clone);
-      tl.to(clone, {
-        autoAlpha: 0,
-        xPercent: dir === "next" ? -8 : 8,
-        duration: 0.28,
-        ease: "power2.in",
-        onComplete: () => {
-          try { clone?.remove(); } catch {}
-        },
-      });
-    }
-
-    tl.add(() => {
-      flushSync(() => {
-        setDisplayIndex(index);
-      });
-      resetTransform(true);
-      const incomingImg = imgRef.current;
-      if (debugRef.current) console.debug("HeroLightbox:swapImage", { index, incomingPresent: !!incomingImg, incomingComplete: incomingImg?.complete });
-      if (incomingImg) {
-        gsap.set(incomingImg, { autoAlpha: 0, xPercent: dir === "next" ? 8 : -8 });
-        // Pause entrance until the image is decoded and ready to render
-        tl.pause();
-        const ensureDecoded = (incomingImg.decode ? incomingImg.decode() : Promise.resolve()).catch(() => null);
-        ensureDecoded.then(() => {
-          if (debugRef.current) console.debug("HeroLightbox:imageReady", { index });
-          tl.resume();
-        });
-      }
-    });
-    // Fade/slide the incoming image into view.
-    tl.to(imgRef.current, { autoAlpha: 1, xPercent: 0, duration: 0.45, ease: "reveal" });
+    tl.to(
+      clone,
+      { autoAlpha: 0, xPercent: dir === "next" ? -8 : 8, duration: 0.32, ease: "power2.in" },
+      0,
+    );
+    tl.to(
+      outgoing,
+      { autoAlpha: 1, xPercent: 0, duration: 0.45, ease: "reveal" },
+      0.08,
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
@@ -474,16 +421,6 @@ export default function HeroLightbox({
           />
         </div>
       </div>
-
-      {/* zoom controls removed */}
-
-      {debugRef.current && (
-        <div className="fixed bottom-6 right-6 z-50 rounded-md bg-black/60 px-3 py-2 text-xs text-white backdrop-blur-sm">
-          <div>cur s: {dbg.cs} tx: {dbg.tx} ty: {dbg.ty}</div>
-          <div>tar s: {dbg.ts} cx: {dbg.cx} cy: {dbg.cy}</div>
-          <div>lastΔ: {Math.round(lastDeltaRef.current)}</div>
-        </div>
-      )}
 
       {/* Discoverability hint for the wheel-zoom — fades on first interaction. */}
       <p
