@@ -136,10 +136,10 @@ export default function HeroLightbox({
       setRendered(false);
       return;
     }
-    gsap.to(stage, { autoAlpha: 0, scale: 0.98, duration: 0.25, ease: "power2.in" });
+    gsap.to(stage, { autoAlpha: 0, y: 10, scale: 0.96, duration: 0.28, ease: "power2.in" });
     gsap.to(overlay, {
       autoAlpha: 0,
-      duration: 0.3,
+      duration: 0.32,
       ease: "power2.in",
       onComplete: () => setRendered(false),
     });
@@ -154,13 +154,13 @@ export default function HeroLightbox({
     if (!overlay || !stage) return;
 
     if (reducedRef.current) {
-      gsap.set([overlay, stage], { autoAlpha: 1, scale: 1 });
+      gsap.set([overlay, stage], { autoAlpha: 1, scale: 1, y: 0 });
       return;
     }
     gsap.set(overlay, { autoAlpha: 0 });
-    gsap.set(stage, { autoAlpha: 0, scale: 0.96 });
-    gsap.to(overlay, { autoAlpha: 1, duration: 0.3, ease: "power2.out" });
-    gsap.to(stage, { autoAlpha: 1, scale: 1, duration: 0.5, ease: "reveal" });
+    gsap.set(stage, { autoAlpha: 0, y: 18, scale: 0.94 });
+    gsap.to(overlay, { autoAlpha: 1, duration: 0.35, ease: "power2.out" });
+    gsap.to(stage, { autoAlpha: 1, y: 0, scale: 1, duration: 0.6, ease: "reveal" });
   }, [rendered, index]);
 
   // Zoom/pan interaction + the ticker lerp that renders it. Runs while open.
@@ -319,6 +319,7 @@ export default function HeroLightbox({
     const clone = outgoing.cloneNode(true) as HTMLImageElement;
     clone.style.position = "absolute";
     clone.style.inset = "0";
+    clone.style.pointerEvents = "none";
     frame.appendChild(clone);
 
     // The clone carries whatever zoom/pan the outgoing image had; the real
@@ -335,7 +336,19 @@ export default function HeroLightbox({
     requestAnimationFrame(() => {
       flushSync(() => setDisplayIndex(index));
       resetTransform(true);
-      gsap.set(outgoing, { autoAlpha: 0, xPercent: dir === "next" ? 8 : -8 });
+
+      // A mathematically exact crossfade: SAME ease, SAME duration, SAME
+      // start time on both layers, so outgoing-alpha + incoming-alpha sums
+      // to exactly 1 at every instant, whatever the ease's shape is. The
+      // previous version used a different ease/duration/delay per layer
+      // (power2.in vs reveal, staggered 0.08s) — since those curves aren't
+      // complementary, there was a window where both were significantly
+      // opaque (a flash) followed by the outgoing layer cratering abruptly
+      // at the end (a pop). That mismatch was the "glitch on changing
+      // images."
+      const DUR = 0.42;
+      const EASE = "reveal";
+      gsap.set(outgoing, { autoAlpha: 0, xPercent: dir === "next" ? 6 : -6 });
 
       const tl = gsap.timeline({
         onComplete: () => {
@@ -345,14 +358,10 @@ export default function HeroLightbox({
       });
       tl.to(
         clone,
-        { autoAlpha: 0, xPercent: dir === "next" ? -8 : 8, duration: 0.32, ease: "power2.in" },
+        { autoAlpha: 0, xPercent: dir === "next" ? -6 : 6, duration: DUR, ease: EASE },
         0,
       );
-      tl.to(
-        outgoing,
-        { autoAlpha: 1, xPercent: 0, duration: 0.45, ease: "reveal" },
-        0.08,
-      );
+      tl.to(outgoing, { autoAlpha: 1, xPercent: 0, duration: DUR, ease: EASE }, 0);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
