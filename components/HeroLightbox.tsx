@@ -90,6 +90,7 @@ export default function HeroLightbox({
 }) {
   const [rendered, setRendered] = useState(false);
   const [zoomed, setZoomed] = useState(false);
+  const [zoomPct, setZoomPct] = useState(100);
   /** What's actually on screen. Lags `index` during a prev/next transition so
    *  the outgoing image stays visible until the incoming one is ready. */
   const [displayIndex, setDisplayIndex] = useState(0);
@@ -268,12 +269,21 @@ export default function HeroLightbox({
       }
     };
 
+    // Throttled so the percentage readout doesn't re-render React every
+    // frame — only when it's changed enough to actually read differently.
+    let lastReportedPct = 100;
     const tick = (_t: number, dtMs: number) => {
       const k = reducedRef.current ? 1 : 1 - Math.pow(1 - LERP, (dtMs / 1000) * 60);
       cur.current.x += (target.current.x - cur.current.x) * k;
       cur.current.y += (target.current.y - cur.current.y) * k;
       cur.current.s += (target.current.s - cur.current.s) * k;
       applyNow();
+
+      const pct = Math.round(cur.current.s * 100);
+      if (pct !== lastReportedPct) {
+        lastReportedPct = pct;
+        setZoomPct(pct);
+      }
     };
 
     // Single listener, on window, capture phase — see file header for why
@@ -373,6 +383,7 @@ export default function HeroLightbox({
     target.current = { x: 0, y: 0, s: 1 };
     if (instant) cur.current = { x: 0, y: 0, s: 1 };
     setZoomed(false);
+    setZoomPct(100);
   }
 
   useEffect(() => {
@@ -409,15 +420,30 @@ export default function HeroLightbox({
       data-lenis-prevent
       className="invisible fixed inset-0 z-[150] flex items-center justify-center bg-ink/95 p-6 backdrop-blur-sm sm:p-10"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        // NOT `e.target === e.currentTarget` — that only matched clicks on
+        // the overlay div itself. `stage` (below) is a `w-full` flex
+        // wrapper that CENTERS the framed image but is exactly as wide as
+        // the modal regardless of the image's own aspect ratio, so for any
+        // image narrower than the modal there's a real, clickable dead
+        // zone on either side that visually reads as "outside the image"
+        // but hit-tests as `stage`, not the overlay — that's why closing
+        // needed multiple/oddly-placed clicks. Closing whenever the click
+        // isn't inside the actual image frame covers the overlay AND that
+        // dead zone in one check.
+        if (!frameRef.current?.contains(e.target as Node)) onClose();
       }}
     >
-      {/* Prev / next — floated at the screen edges, over the scrim. */}
+      {/* Prev / next — floated at the screen edges, over the scrim.
+          stopPropagation so this click doesn't also bubble to the overlay's
+          own onClick above and close the modal it's meant to navigate. */}
       <button
         type="button"
         data-cursor="Prev"
         aria-label="Previous image"
-        onClick={() => nav(-1)}
+        onClick={(e) => {
+          e.stopPropagation();
+          nav(-1);
+        }}
         className="absolute top-1/2 left-3 z-10 flex size-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 text-white/70 backdrop-blur-sm transition-[color,background-color,border-color,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-white/40 hover:bg-white/10 hover:text-white active:scale-90 sm:left-6"
       >
         <ChevronIcon direction="prev" />
@@ -426,7 +452,10 @@ export default function HeroLightbox({
         type="button"
         data-cursor="Next"
         aria-label="Next image"
-        onClick={() => nav(1)}
+        onClick={(e) => {
+          e.stopPropagation();
+          nav(1);
+        }}
         className="absolute top-1/2 right-3 z-10 flex size-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 text-white/70 backdrop-blur-sm transition-[color,background-color,border-color,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-white/40 hover:bg-white/10 hover:text-white active:scale-90 sm:right-6"
       >
         <ChevronIcon direction="next" />
@@ -452,13 +481,23 @@ export default function HeroLightbox({
         </div>
       </div>
 
-      {/* Discoverability hint for the wheel-zoom — fades on first interaction. */}
+      {/* Discoverability hint for the wheel-zoom — fades once zoomed. */}
       <p
         className={`pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 text-sm tracking-body text-white/45 transition-opacity duration-500 ${
           zoomed ? "opacity-0" : "opacity-100"
         }`}
       >
         Scroll to zoom &middot; Drag to pan
+      </p>
+
+      {/* Zoom percentage — always visible (not just once zoomed), so it
+          doubles as a live signal that the wheel listener is actually
+          receiving events: if this number never moves at all on scroll,
+          the event isn't reaching the handler (an environment/browser
+          issue) rather than the transform failing to render (a rendering
+          issue) — two very different bugs to chase. */}
+      <p className="pointer-events-none absolute bottom-6 right-6 text-sm tabular-nums tracking-body text-white/45 sm:right-10">
+        {zoomPct}%
       </p>
     </div>,
     document.body,
