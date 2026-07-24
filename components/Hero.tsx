@@ -67,9 +67,9 @@ export default function Hero() {
               className="mt-10 lg:absolute lg:top-0 lg:right-0 lg:mt-0 lg:w-[231px]"
             >
               <p className="text-2xl tracking-body text-ink-muted">
-                Got something <span className="text-ink">complex</span>
+                Got some <span className="text-ink">ideas</span> to
                 <br />
-                to untangle?
+                untangle?
               </p>
 
               {/* The reveal animates this plain wrapper, never the pill

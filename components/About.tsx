@@ -23,7 +23,7 @@ export default function About() {
         <p className="font-display text-[clamp(1.5rem,5vw,2rem)] leading-[1.15] tracking-[-0.01em]">
           <span className="text-ink">Product designer based in Dhaka</span>
           <span className="text-ink-muted">
-            . I design complex software that people understand on the first
+            . I design software that people understand on the first
             try, and hand off specs that actually get built.
           </span>
         </p>
@@ -34,7 +34,7 @@ export default function About() {
         object="/about/parallax-obj.png"
         eyebrow="About me"
         bio="Product designer based in Bangladesh"
-        bioMuted=". I design complex software that people understand on the first try, and hand off specs that actually get built."
+        bioMuted=". I design software that people understand on the first try, and hand off specs that actually get built."
       />
     </section>
   );

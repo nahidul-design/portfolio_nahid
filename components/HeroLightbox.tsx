@@ -463,11 +463,11 @@ export default function HeroLightbox({
 
       <div
         ref={stageRef}
-        className="invisible flex w-full max-w-[1100px] items-center justify-center will-change-transform"
+        className="invisible flex items-center justify-center will-change-transform"
       >
         <div
           ref={frameRef}
-          className={`img-radius relative aspect-[588/440] max-h-[84vh] w-full touch-none overflow-hidden select-none ${
+          className={`img-radius relative inline-flex max-h-[84vh] max-w-[min(1100px,calc(100vw-4rem))] touch-none overflow-hidden select-none ${
             zoomed ? "cursor-grab active:cursor-grabbing" : "cursor-default"
           }`}
         >
@@ -476,7 +476,7 @@ export default function HeroLightbox({
             src={current.src}
             alt={current.alt}
             draggable={false}
-            className="absolute inset-0 size-full object-contain will-change-transform"
+            className="block max-h-full max-w-full object-contain will-change-transform"
           />
         </div>
       </div>
