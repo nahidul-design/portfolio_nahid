@@ -191,12 +191,13 @@ export default function HeroLightbox({
     const setZoomedFlag = (s: number) => setZoomed(s > 1.001);
 
     const onWheel = (e: WheelEvent) => {
-      // preventDefault blocks the page scroll; stopPropagation stops it
-      // from ever reaching Lenis's own window-level wheel listener (see
-      // file header) — capture-phase + stopPropagation is what reliably
-      // wins that race regardless of registration order.
+      // preventDefault blocks the page scroll; stopImmediatePropagation
+      // stops it from reaching Lenis's own window-level wheel listener
+      // (see file header) — Lenis's handler still runs and calls its own
+      // preventDefault even while `lenis.stop()`-ped, so belt-and-braces
+      // with both this AND the data-lenis-prevent attribute on the overlay.
       e.preventDefault();
-      e.stopPropagation();
+      e.stopImmediatePropagation();
       if (transitioningRef.current) return;
 
       // Normalize across deltaMode so trackpad/wheel/precision devices
@@ -400,6 +401,12 @@ export default function HeroLightbox({
       aria-modal="true"
       aria-label="Image preview"
       data-cursor-theme="dark"
+      // Lenis's own documented opt-out — belt-and-braces alongside the
+      // capture-phase + stopPropagation wheel listener below. Lenis's own
+      // wheel handler still runs (and calls preventDefault) even while
+      // stopped; this attribute makes it skip the subtree entirely instead
+      // of relying solely on propagation-order reasoning.
+      data-lenis-prevent
       className="invisible fixed inset-0 z-[150] flex items-center justify-center bg-ink/95 p-6 backdrop-blur-sm sm:p-10"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
