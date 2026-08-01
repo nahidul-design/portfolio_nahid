@@ -19,9 +19,9 @@ import SquiggleArrow from "./SquiggleArrow";
  * full ink), category right (Barlow 16px, 60% ink, `capitalize` — not
  * uppercase). There is no year in the caption; an earlier pass invented one.
  *
- * Every strip links to /404 rather than /work/[slug] — the real case-study
- * pages aren't built yet, so this points at the site's "under construction"
- * page instead of a dead route (same call as the UI Picker CTA).
+ * Every strip links to /work/[slug] now that the case-study template is
+ * built (lib/projects.ts) — these five slugs (test-taker, bag-flyer,
+ * relivery, kotha, revup) match content/projects/*.mdx exactly.
  *
  * "use client" for one reason: Strip's onClick saves the current scroll
  * position before navigating away, so RestoreHomeScroll can put the user
@@ -34,10 +34,12 @@ import SquiggleArrow from "./SquiggleArrow";
  * overlay, and the caption shift sits on the group container — GSAP never
  * touches any element that carries a CSS transition on transform/opacity.
  *
- * Placeholder data lives here on purpose. CLAUDE.md flags the MDX frontmatter
- * schema as unsettled against the richer case-study template, so wiring these
- * strips to lib/projects now would just have to be redone. Swap this array
- * for the content layer once that schema lands.
+ * This array stays hand-authored rather than pulling from lib/projects: the
+ * grid image here is the home page's own showcase crop (public/showcase/*
+ * .webp, sized for this specific full/two-up/three-up layout), not the
+ * case study's full-bleed cover — the two are legitimately different
+ * assets for different contexts. `slug` is the one link between them and
+ * must keep matching content/projects/*.mdx's filenames.
  */
 type Showcase = {
   slug: string;
@@ -147,7 +149,7 @@ function Strip({
 }) {
   return (
     <Link
-      href="/404"
+      href={`/work/${item.slug}`}
       data-cursor="View"
       style={
         accordion
