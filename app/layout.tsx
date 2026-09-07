@@ -6,7 +6,7 @@ import ScrollRestoration from "@/components/ScrollRestoration";
 import ScrollReveals from "@/components/ScrollReveals";
 import ScrollVignette from "@/components/ScrollVignette";
 import SmoothScroll from "@/components/SmoothScroll";
-import { display, sans, script } from "./fonts";
+import { mono, sans } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${display.variable} ${sans.variable} ${script.variable}`}
+      className={`${sans.variable} ${mono.variable}`}
     >
       <body className="flex min-h-dvh flex-col">
         <ScrollRestoration />

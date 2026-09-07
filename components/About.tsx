@@ -1,41 +1,45 @@
-import AboutParallax from "./AboutParallax";
+import EyebrowTag from "./EyebrowTag";
 import Reveal from "./Reveal";
 
 /**
- * About (Figma node `173:276`) — full-bleed parallax card; see
- * AboutParallax for the layer/animation breakdown. The section carries no
- * horizontal padding — the background image bleeds nearly edge-to-edge in
- * Figma, so this is full-bleed like UIPicker, not gutter-padded like the
- * text-only sections. Only vertical page rhythm lives here.
+ * v3 About (Figma `32:122` desktop / `79:267` mobile) — replaces the old
+ * side-by-side bio/parallax-photo layout entirely (AboutParallax.tsx is
+ * gone; its two photos moved into Hero instead). Shape: the same
+ * label-left/content-right row already established by Résumé, a Manrope
+ * bio paragraph with its opening sentence dimmed. The partner-logo
+ * marquee this section carried before is gone too — Figma dropped it (the
+ * "About col" frame now holds nothing but the bio text), not replaced by
+ * anything else here.
  *
- * Below `lg`, the eyebrow+bio render as a plain stacked block above the
- * card (own px-gutter) instead of overlaid on it — see AboutParallax's
- * comment for why the overlay treatment is lg:-only.
+ * Mobile gap is 12px (Figma `79:267`'s own `gap-[12px]`), not the 32px
+ * this used flat before switching to the side-by-side row at `sm` — the
+ * stacked mobile state needed its own, much tighter value. Bio text floor
+ * is 24px flat on mobile (`79:272`), so the responsive clamp's minimum
+ * moved from 1.375rem (22px) up to 1.5rem to actually hit that.
  */
 export default function About() {
   return (
-    <section aria-label="About" className="flex flex-col gap-8 py-20 lg:py-28">
-      <Reveal
-        group
-        className="flex flex-col items-center gap-6 px-gutter text-center lg:hidden"
-      >
-        <p className="text-base tracking-normal text-ink uppercase">About me</p>
-        <p className="font-display text-[clamp(1.5rem,5vw,2rem)] leading-[1.15] tracking-[-0.01em]">
-          <span className="text-ink">Product designer based in Dhaka</span>
-          <span className="text-ink-muted">
-            . I design software that people understand on the first
-            try, and hand off specs that actually get built.
-          </span>
-        </p>
+    <section
+      id="about"
+      aria-label="About"
+      className="page-container flex flex-col items-start gap-3 px-gutter sm:flex-row sm:gap-8 lg:px-gutter-lg"
+    >
+      <Reveal as="div" className="w-full shrink-0 sm:w-[180px] lg:w-[280px]">
+        <EyebrowTag>About me</EyebrowTag>
       </Reveal>
 
-      <AboutParallax
-        background="/about/parallax-bg.png"
-        object="/about/parallax-obj.png"
-        eyebrow="About me"
-        bio="Product designer based in Dhaka"
-        bioMuted=". I design software  that people understand on the first try, and hand off specs which actually get built."
-      />
+      <Reveal
+        as="p"
+        className="min-w-0 flex-1 text-[clamp(1.5rem,3.2vw,2.25rem)] leading-[1.35] tracking-display text-justify text-ink"
+      >
+        <span className="text-ink-muted">
+          New idea or existing product, I try to make things simpler than I
+          found them.
+        </span>{" "}
+        {
+          "I've spent more than 5 years designing dashboards, web, and mobile & to me the best part of the job is the moment something finally clicks for the person using it."
+        }
+      </Reveal>
     </section>
   );
 }

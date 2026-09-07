@@ -1,21 +1,43 @@
 ---
 title: Project title
-tagline: One-line subtitle shown under the title in the hero.
-role: Product Designer
+tagline: One-paragraph description shown next to the title in the sidebar.
+client: Confidential
+scope: Web Application
 timeline: 3 Months
-category: Web Application
 year: 2026
-coverImage: /projects/example/cover.svg
-overview: The one-paragraph overview shown in the Overview row.
-problem: The problem this work addressed.
-whatIDid: What I did to solve it.
 screens:
-  - image: /projects/example/screen-1.svg
-    caption: Caption for the first full-width screen.
-  - image: /projects/example/screen-2.svg
-    caption: Caption for the second full-width screen.
+  - image: /projects/example/cover.webp
+    caption: Optional — only the cover ever gets one, not any of the screens after it.
+  - image: /projects/example/screen-1.avif
+  - image: /projects/example/screen-2.avif
+  - image: /projects/example/screen-3.avif
 order: 1
 ---
 
 Files prefixed with an underscore are ignored by the loader, so this
 template never renders as a route.
+
+A project with just ONE entry in `screens` (no lead image + separate
+screens — just one image total) automatically renders as the "single
+website screenshot" variant instead of the stacked "multiple image" one —
+see components/case-study/ScreenStack.tsx. There's no separate field to set
+for that; it's inferred from the array length.
+
+**Caption placement**: at most ONE entry gets a `caption` — the COVER
+(`screens[0]`), and only if it's actually needed. Every `screen-N` after it
+renders with no text below it. This isn't enforced by the loader (it just
+renders whatever `caption` you give any entry), so it's a content rule to
+follow, not something the code will catch if ignored — confirmed directly
+against Figma's own "project details demo" frame (`123:971`), which shows
+body copy right under the lead/cover image, nothing under any image after
+it. (An earlier pass had this backwards — caption on the first `screen-N`
+instead of the cover — since the demo frame's cover and first screen read
+almost identically at a glance; don't repeat that misread.)
+
+**Image format convention**: `cover` is always `.webp`; every `screen-N`
+after it is `.avif` — AVIF compresses noticeably smaller than WebP/PNG at
+the same visual quality, and every `screen-N` is lazy-loaded below the
+fold anyway (see ScreenStack.tsx), so the smaller format matters most
+there. The loader doesn't enforce this (it just renders whatever path
+string you give it), so it's a naming convention to follow when adding new
+project content, not a hard requirement the code checks.

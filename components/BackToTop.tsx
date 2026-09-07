@@ -29,13 +29,20 @@ function ArrowUp() {
  * version (transparent, hairline border) matched none of those and read as
  * a different, unrelated widget bolted onto the footer.
  */
-export default function BackToTop() {
+export default function BackToTop({
+  className = "size-10",
+}: {
+  /** Size utility only — callers shouldn't need to repeat the rest of the
+   *  button's own styling just to shrink it (Contact.tsx's mobile size is
+   *  32px per Figma `79:452`, vs. 40px at desktop). */
+  className?: string;
+}) {
   return (
     <button
       type="button"
       onClick={() => scrollToTop()}
       aria-label="Back to top"
-      className="btn-liquid group flex size-10 shrink-0 items-center justify-center rounded-full bg-ink text-page"
+      className={`btn-liquid group flex shrink-0 items-center justify-center rounded-full bg-ink text-page ${className}`}
     >
       <ArrowUp />
     </button>
