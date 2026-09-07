@@ -49,11 +49,18 @@ function bind(): gsap.Context {
       once: true,
     });
 
+    // [data-reveal-immediate] opts an element out of the scroll gate
+    // entirely (see Reveal.tsx's `immediate` prop) — REVEAL_START is a
+    // SCROLL threshold, so content already past it on load (nothing below
+    // it to scroll into view) would otherwise sit on a "once" trigger that
+    // can structurally never fire.
     const common = (el: Element) => ({
       duration: REVEAL_DUR,
       ease: REVEAL_EASE,
       clearProps: REVEAL_CLEAR,
-      scrollTrigger: trigger(el),
+      ...(el.hasAttribute("data-reveal-immediate")
+        ? {}
+        : { scrollTrigger: trigger(el) }),
     });
 
     // [data-intro-owned] targets belong to the intro loader, which hides
@@ -80,7 +87,10 @@ function bind(): gsap.Context {
     gsap.utils
       .toArray<HTMLElement>("[data-reveal-image]:not([data-intro-owned])")
       .forEach((el) => {
-        addImageReveal(gsap.timeline({ scrollTrigger: trigger(el) }), el, 0);
+        const scrollTrigger = el.hasAttribute("data-reveal-immediate")
+          ? undefined
+          : trigger(el);
+        addImageReveal(gsap.timeline({ scrollTrigger }), el, 0);
       });
   });
 }

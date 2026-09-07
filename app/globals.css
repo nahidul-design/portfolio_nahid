@@ -6,34 +6,30 @@
 
 @theme {
   /* ---- Typefaces ---------------------------------------------------------
-     Three families, one job each. Families come from next/font (app/fonts.ts),
-     which sets the *-family vars on <html>. */
-  --font-display: var(--font-display-family), "Times New Roman", Georgia, serif;
+     v3 — two families, not three (see CLAUDE.md / app/fonts.ts). Families
+     come from next/font/google, which sets the *-family vars on <html>. */
   --font-sans: var(--font-sans-family), "Helvetica Neue", Arial, sans-serif;
-  --font-script: var(--font-script-family), "Segoe Script", cursive;
+  --font-mono: var(--font-mono-family), ui-monospace, "SFMono-Regular", monospace;
 
   /* ---- Colour ------------------------------------------------------------
      Sampled directly from the Figma layers, not invented. */
   --color-page: #ffffff;
   --color-ink: #1b1e1f;
-  --color-ink-muted: rgba(27, 30, 31, 0.6); /* UI/meta labels */
-  --color-ink-dim: rgba(27, 30, 31, 0.55); /* de-emphasised display lines */
-  --color-line: rgba(27, 30, 31, 0.12);
-  --color-available: #22c55e; /* the "available for work" dot */
+  --color-ink-muted: rgba(27, 30, 31, 0.6); /* UI/meta labels, dimmed copy */
+  --color-line: rgba(27, 30, 31, 0.05); /* hairlines + tag/pill backgrounds */
 
   /* ---- Tracking ----------------------------------------------------------
-     Display and sentence-case body are tight; uppercase UI labels sit at 0 —
-     that's how the Figma file is set, and uppercase needs the breathing room.
-     Verified: 14px→-0.42px, 20px→-0.6px, 24px→-0.72px all = -3%; the 16px
-     uppercase labels ("CONTACT", "PRODUCT DESIGNER") carry no tracking. */
-  --tracking-display: -0.02em; /* -1.92px at 96px */
-  --tracking-body: -0.03em;
-  --tracking-wordmark: -0.04em; /* -0.96px at 24px */
+     Manrope headings sit at a flat -2% regardless of size (verified at
+     24/32/36/48px — all -2% of their own size). Chivo Mono UI text carries
+     NO tracking at all — unlike v2's uppercase-with-tracking Barlow. */
+  --tracking-display: -0.02em;
 
   /* ---- Spacing -----------------------------------------------------------
-     The Figma frame is 1440 wide with a 120px side gutter. */
-  --spacing-gutter: 1.5rem; /* 24px — mobile */
-  --spacing-gutter-lg: 7.5rem; /* 120px — desktop, per Figma */
+     v3 drops the old wide 120px desktop gutter for a much tighter, denser
+     layout — the Figma frame is still 1440 wide, but content now sits just
+     32px from the edge instead of 120px. */
+  --spacing-gutter: 1.5rem; /* 24px — mobile, unchanged */
+  --spacing-gutter-lg: 2rem; /* 32px — desktop */
 }
 
 @layer base {
@@ -45,7 +41,6 @@
     background-color: var(--color-page);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    letter-spacing: var(--tracking-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -53,10 +48,9 @@
   h1,
   h2,
   h3 {
-    font-family: var(--font-display);
-    font-weight: 400; /* Instrument Serif has no meaningful bold — size carries hierarchy */
+    font-family: var(--font-sans);
+    font-weight: 400; /* Manrope has no heavier weight loaded — size carries hierarchy */
     letter-spacing: var(--tracking-display);
-    text-transform: uppercase;
   }
 
   ::selection {
@@ -70,12 +64,29 @@
   }
 }
 
-/* ---- Image container radius ----------------------------------------------
-   Shared 2px radius for every image container site-wide (gallery cards, case
-   study covers, about images) — small, near-square, per Figma. One utility
+/* ---- Page container ---------------------------------------------------------
+   Every section's content sits inside this: the Figma canvas is 1440 wide
+   with a 32px gutter each side, i.e. 1376px of actual content — and that
+   1376px is a hard cap, not a value that only happens to look right at
+   1440. Below 1440 the element is just `w-full` (no max-width bites yet),
+   so px-gutter/px-gutter-lg alone give the normal fluid, shrinking layout
+   on tablet/mobile; at 1440 and up (a 2K or 4K monitor included) the
+   1440px max-width plus the same 32px padding on each side pins content at
+   exactly 1376px and centers it, instead of stretching lines edge-to-edge
+   across a huge viewport. Pair with px-gutter lg:px-gutter-lg on the same
+   element — this utility only supplies the width/centering half. */
+@utility page-container {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+}
+
+/* ---- Card / image radius ---------------------------------------------------
+   v3: 32px everywhere a photo or dark panel gets a rounded container (project
+   cards, quote panel) — a drastic jump from v2's near-square 2px. One utility
    so the value only ever lives in one place. */
 @utility img-radius {
-  border-radius: 2px;
+  border-radius: 32px;
 }
 
 /* ---- Liquid button -------------------------------------------------------
@@ -119,12 +130,10 @@
 }
 
 /* ---- Hover-underline link -------------------------------------------------
-   Shared by the nav Résumé link, the footer wordmark, and the LinkedIn/
-   WhatsApp/email links: an underline that draws left-to-right on hover
+   Shared by any plain text link that draws an underline in on hover
    (scaleX, not a width change) via ::after, so no extra markup is needed at
-   each of the five call sites. Color shift (muted → ink) and the icon
-   scale/rotate are plain group-hover: utilities applied per element, since
-   only some of these links start muted or carry an icon. */
+   each call site. Colour shift and icon nudge are plain hover:/group-hover:
+   utilities layered on top per call site. */
 @utility link-underline {
   position: relative;
 

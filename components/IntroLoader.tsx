@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "@/lib/gsap";
+import IconMark from "./IconMark";
 import {
   addImageRevealTo,
   REVEAL_CLEAR,
@@ -39,9 +40,38 @@ export default function IntroLoader() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLParagraphElement>(null);
+  const iconRef = useRef<HTMLSpanElement>(null);
   const tlRef = useRef<gsap.core.Timeline | null>(null);
 
   useLayoutEffect(() => {
+    // ScrollReveals checks for `#intro-loader` in the DOM to decide whether
+    // to wait for this component's own "nh-intro-reveal" event before
+    // binding — and that element IS present on every route's first render
+    // (this component's early-return below only flips `done` on the NEXT
+    // render; React doesn't remove the DOM node mid-effect-phase). So on
+    // any route that bails out early — every route except "/" — that event
+    // must be dispatched here, or ScrollReveals waits uselessly for its own
+    // 4-second timeout backstop before binding anything: everything before
+    // that point sits fully visible and un-styled (no reveal has touched
+    // it yet), and at t=4s GSAP's immediateRender then SNAPS it to the
+    // hidden "from" state before animating back — a real flash/flicker,
+    // not a cosmetic one (confirmed live: the 404 page's button visibly
+    // faded ~4s after load, every time, until this was added).
+    //
+    // Dispatched via a macrotask (setTimeout 0), not called directly: this
+    // component mounts BEFORE ScrollReveals in the tree (see app/layout.tsx),
+    // and sibling layout effects run in that same mount order within one
+    // commit — dispatching synchronously here would fire before
+    // ScrollReveals' own layout effect has even added its listener, and the
+    // event would be missed entirely (right back to the 4s timeout). A
+    // macrotask runs after the whole synchronous commit (every layout
+    // effect in it, ScrollReveals' included) has already finished.
+    const releaseScrollReveals = () =>
+      window.setTimeout(
+        () => window.dispatchEvent(new Event("nh-intro-reveal")),
+        0,
+      );
+
     // Gate the intro on the client-side pathname to avoid server/client
     // rendering mismatches. If not on the root path, skip the intro.
     if (typeof window !== "undefined") {
@@ -53,6 +83,7 @@ export default function IntroLoader() {
           : fullPath;
         if (relative !== "/") {
           setDone(true);
+          releaseScrollReveals();
           return;
         }
       } catch (e) {
@@ -61,6 +92,7 @@ export default function IntroLoader() {
     }
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setDone(true);
+      releaseScrollReveals();
       return;
     }
 
@@ -97,6 +129,19 @@ export default function IntroLoader() {
     tl.set(words, { y: 30, autoAlpha: 0, skewY: 5, filter: "blur(8px)" }, 0);
     tl.set(owned, REVEAL_FROM, 0);
     tl.call(() => images.forEach(setImageRevealFrom), [], 0);
+
+    // The icon spins through the whole hold — not a constant-speed loop, a
+    // single decelerating spin with real momentum, like a coin set spinning
+    // on a table and slowing from friction: fast off the top, unwinding to
+    // a dead stop exactly as the hold ends and the pill starts collapsing.
+    // power3.out gives that fast-start/slow-finish curve in one tween rather
+    // than a linear infinite spin, which read as generic "loading spinner"
+    // motion instead of something considered.
+    tl.to(
+      iconRef.current,
+      { rotate: 3 * 360, ease: "power3.out", duration: 1.2 },
+      0,
+    );
 
     // Give the logo frame a more natural breath right before the collapse:
     // a quick 100% -> 120% pulse that lands directly into the square-shrink.
@@ -218,11 +263,14 @@ export default function IntroLoader() {
         ref={pillRef}
         className="flex items-center justify-center overflow-hidden border border-white px-5 py-4"
       >
-        <p
-          ref={textRef}
-          className="font-script text-[32px] leading-none tracking-wordmark whitespace-nowrap text-white"
-        >
-          Nahidul Islam.
+        {/* v3: the pill shows the icon mark, not the spelled-out wordmark —
+            matching the Nav's own icon+mono lockup rather than the old
+            script-font full name. Kept on a <p> (not an <img> directly) so
+            textRef's existing type/fade tween don't need touching. */}
+        <p ref={textRef} className="flex items-center justify-center leading-none">
+          <span ref={iconRef} className="inline-block">
+            <IconMark className="size-8" />
+          </span>
         </p>
       </div>
 

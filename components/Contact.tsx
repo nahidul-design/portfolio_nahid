@@ -1,88 +1,154 @@
+import BackToTop from "./BackToTop";
 import CopyEmailLink from "./CopyEmailLink";
+import IconMark from "./IconMark";
 import Reveal from "./Reveal";
+import SmoothAnchor from "./SmoothAnchor";
+
+const LINKS = [
+  { href: "#intro", label: "intro" },
+  { href: "#about", label: "About" },
+  { href: "#works", label: "my works" },
+  { href: "#experience", label: "experience" },
+] as const satisfies readonly { href: `#${string}`; label: string }[];
 
 /**
- * Contact (Figma 96:132) — giant "Let's talk.", click-to-copy email,
- * LinkedIn/WhatsApp with icons. `id="contact"` is load-bearing: Nav's and
- * Hero's Contact links both smooth-scroll here (see lib/scroll.ts).
+ * v3 Contact + Footer, merged into one section (Figma `32:72`) — v2 kept
+ * these as two separate components (Contact.tsx + HomeFooter.tsx); v3's
+ * Figma file has no separate footer at all, just this one band on the new
+ * `--color-surface` (#f7f8fa) background. `id="contact"` is still
+ * load-bearing — the Nav/Hero/Résumé CTAs all smooth-scroll here.
  *
- * Two-step stagger (email, then the icon row) rather than three individual
- * items — mirrors Figma's own grouping, where LinkedIn+WhatsApp sit inside
- * one "Frame 16" container distinct from the email block.
+ * The outer <section> stays a genuine full-bleed band (the surface colour
+ * runs edge to edge); the inner page-container div is what caps the actual
+ * content at 1376px and centers it — same split every full-bleed-background
+ * section on the page needs.
  *
- * LinkedIn/WhatsApp get a distinct treatment from the rest of the site's
- * links: no underline — a soft rounded pill background fades in behind
- * icon+label, the icon does a small scale+rotate, and the whole pill lifts
- * 1px. All of it lives directly on the <a> (safe here: the reveal-group's
- * actual target is the wrapping icon-row <div>, not these two <a> tags —
- * they're grandchildren, so GSAP never writes inline styles to them).
- * The negative margin/padding pairing lets the pill extend past the icon
- * and label without shifting surrounding layout. One combined arbitrary
- * `transition-[...]` utility, not separate transition-colors +
- * transition-transform stacked — see the btn-liquid note in CLAUDE.md for
- * why stacking Tailwind transition-* utilities is unsafe.
- * CopyEmailLink keeps the underline treatment, unchanged.
+ * Internal rhythm (icon → copy → hairline → hairline → social row) runs on
+ * a flat 80px gap at desktop (verified fresh against Figma) via the gap-20
+ * on the wrapper below. No top padding of its own — the gap from Quote
+ * comes from `<main>`'s shared gap-40 (see app/page.tsx), same as every
+ * other section boundary. Contact IS the footer though, and nothing
+ * follows it for a gap to apply against, so it keeps its own bottom
+ * padding — 80px at desktop, matching the frame's own bottom inset, but
+ * only 24px at mobile (Figma `79:419`'s `pb-[24px]`, a real, much smaller
+ * value, not the same 80px scaled down). The icon mark above the copy is
+ * new too — Figma added it in this same pass, it wasn't here before, and
+ * it's 32px at mobile (`79:422`) vs. 76px at desktop — not the 52px middle
+ * step an earlier pass used, which wasn't sourced from any verified frame.
+ *
+ * Side gutter is also its own value here, not the shared 32px
+ * `px-gutter-lg` every other section uses — Figma's Contact frame insets
+ * its content 40px at desktop (1360px content in a 1440px frame), not the
+ * 32px/1376px every other section uses. Verified against the frame's own
+ * x-offset, not assumed continuity with the rest of the page.
+ *
+ * Paragraph is ALL 60%-muted ink now, not two-tone — Figma `79:423` styles
+ * both halves of "I'd love to hear from you! / Whether you have a
+ * project…" identically at `rgba(27,30,31,0.6)`; an earlier pass had the
+ * first half at full ink opacity, which no longer matches.
+ *
+ * The nav-links row wraps into two rows at mobile (Figma `79:426`'s own
+ * `flex-wrap justify-between`, 24px row gap) instead of the single row
+ * desktop keeps — "my works" and "experience" are wide enough that a
+ * forced single row would overflow a 350px content column.
+ *
+ * Back-to-top drops its "Back to top" text label at mobile (Figma `79:450`
+ * has just the bare 32px icon control, no text next to it) and the button
+ * itself shrinks from 40px to that same 32px.
+ *
+ * No background fill — verified fresh against Figma, this section's own
+ * container carries no bg color at all (plain page white). An earlier pass
+ * sampled a #f7f8fa "surface" tone here that Figma no longer has (or never
+ * actually had; either way it's gone from the current file).
+ *
+ * HomeFooter.tsx is NOT deleted — app/not-found.tsx (the 404 page, left
+ * untouched per this pass's scope) still renders it.
  */
-function LinkedInIcon() {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src="/contact/linkedin.svg" alt="" aria-hidden className="size-5" />
-  );
-}
-
-function WhatsAppIcon() {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src="/contact/whatsapp.svg" alt="" aria-hidden className="size-5" />
-  );
-}
-
 export default function Contact() {
   return (
-    <section
-      id="contact"
-      aria-label="Contact"
-      className="flex flex-col gap-10 px-gutter pt-24 pb-20 lg:gap-16 lg:px-gutter-lg lg:pt-32 lg:pb-28"
-    >
-      <Reveal
-        as="h2"
-        className="text-[clamp(3rem,10vw,7.5rem)] leading-none tracking-[-0.02em]"
-      >
-        Let&rsquo;s talk.
-      </Reveal>
+    <section id="contact" aria-label="Contact">
+      <div className="page-container flex flex-col gap-8 px-gutter pb-6 lg:gap-20 lg:px-10 lg:pb-20">
+        <div className="flex flex-col gap-4 lg:gap-8">
+          <Reveal>
+            <IconMark className="size-8 lg:size-[76px]" />
+          </Reveal>
 
-      <Reveal
-        group
-        className="flex flex-col items-start gap-8 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <CopyEmailLink />
-
-        <div className="flex items-center gap-8">
-          <a
-            href="https://www.linkedin.com/in/muhammad-nahidul-islam-48041a120/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group/li -mx-3 -my-2 flex items-center gap-2 rounded-full px-3 py-2 text-ink-muted transition-[color,background-color,transform] duration-300 hover:-translate-y-px hover:bg-ink/[0.07] hover:text-ink"
+          <Reveal
+            group
+            className="flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-start lg:gap-10"
           >
-            <span className="inline-block transition-transform duration-300 group-hover/li:scale-110 group-hover/li:-rotate-[5deg]">
-              <LinkedInIcon />
-            </span>
-            <span className="text-base tracking-body">LinkedIn</span>
-          </a>
+            <div className="flex w-full max-w-[676px] flex-col gap-4 lg:gap-12">
+              <p className="text-[clamp(1.5rem,3vw,2rem)] leading-[1.2] tracking-display text-ink-muted">
+                I&rsquo;d love to hear from you! Whether you have a project in
+                mind or just want to say hi, feel free to reach out.
+              </p>
 
-          <a
-            href="https://wa.me/8801827007441"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group/wa -mx-3 -my-2 flex items-center gap-2 rounded-full px-3 py-2 text-ink-muted transition-[color,background-color,transform] duration-300 hover:-translate-y-px hover:bg-ink/[0.07] hover:text-ink"
-          >
-            <span className="inline-block transition-transform duration-300 group-hover/wa:scale-110 group-hover/wa:-rotate-[5deg]">
-              <WhatsAppIcon />
-            </span>
-            <span className="text-base tracking-body">WhatsApp</span>
-          </a>
+              <CopyEmailLink />
+            </div>
+
+            <nav className="flex flex-wrap items-center justify-between gap-x-8 gap-y-6 lg:flex-nowrap lg:justify-start lg:gap-8">
+              {LINKS.map((link) => (
+                <SmoothAnchor
+                  key={link.href}
+                  href={link.href}
+                  className="link-underline font-mono text-[14px] leading-none text-ink/60 uppercase transition-colors duration-300 hover:text-ink"
+                >
+                  {link.label}
+                </SmoothAnchor>
+              ))}
+            </nav>
+          </Reveal>
         </div>
-      </Reveal>
+
+        <Reveal as="span" className="h-px w-full bg-line" />
+
+        <Reveal group className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-6 lg:gap-8">
+            <a
+              href="https://www.linkedin.com/in/muhammad-nahidul-islam-48041a120/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group/li -mx-3 -my-2 flex items-center gap-2 rounded-full px-3 py-2 font-mono text-[14px] leading-none text-ink uppercase transition-[color,background-color,transform] duration-300 hover:-translate-y-px hover:bg-ink/[0.07]"
+            >
+              <span className="inline-block transition-transform duration-300 group-hover/li:scale-110 group-hover/li:-rotate-[5deg]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/contact/linkedin-brand.svg"
+                  alt=""
+                  aria-hidden
+                  className="size-5"
+                />
+              </span>
+              LinkedIn
+            </a>
+
+            <a
+              href="https://wa.me/8801827007441"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group/wa -mx-3 -my-2 flex items-center gap-2 rounded-full px-3 py-2 font-mono text-[14px] leading-none text-ink uppercase transition-[color,background-color,transform] duration-300 hover:-translate-y-px hover:bg-ink/[0.07]"
+            >
+              <span className="inline-block transition-transform duration-300 group-hover/wa:scale-110 group-hover/wa:-rotate-[5deg]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/contact/whatsapp-brand.svg"
+                  alt=""
+                  aria-hidden
+                  className="size-5"
+                />
+              </span>
+              WhatsApp
+            </a>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden font-mono text-[14px] leading-none text-ink uppercase lg:inline">
+              Back to top
+            </span>
+            <BackToTop className="size-8 lg:size-10" />
+          </div>
+        </Reveal>
+      </div>
     </section>
   );
 }

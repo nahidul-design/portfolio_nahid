@@ -3,30 +3,49 @@ import path from "node:path";
 import matter from "gray-matter";
 
 /**
- * v2 schema — replaces the v1 fields (category/whatSolved/detailImage/etc.),
- * which were designed around the old single-panel work page. This one maps
- * 1:1 onto the case-study template's sections (Figma `98:2`, verified against
- * the five real frames at node `260:2`): title hero + tagline, a four-column
- * meta table, three copy rows (Overview/Problem/What I did), and a run of
- * full-width screen modules. See CLAUDE.md's "Content model" note — this is
- * the schema it said still needed designing.
+ * v3 schema (Figma `77:2` "Case study multiple image" / `77:126` "Case
+ * study website") — replaces the v2 schema entirely, not layered on top of
+ * it. v2 had role/category/overview/problem/whatIDid mapped onto a
+ * template with a separate cover image, a 4-column meta table, and three
+ * Overview/Problem/What-I-did copy rows; none of that exists in this
+ * design. The new template is just: a sidebar (title, tagline, a
+ * client/scope/year/timeline meta list) next to a flowing column of
+ * screen images, then a "More Projects" section. See CLAUDE.md's old
+ * "Content model" note — this is that redesign.
+ *
+ * `client` is a real gap in the current content, not an oversight: none of
+ * the 5 projects have a disclosed client name on file, so every one of
+ * them carries the literal placeholder "Confidential" until real names are
+ * supplied — don't invent a company name to fill this in.
+ *
+ * There is deliberately no `layout`/`type` field distinguishing Figma's
+ * "multiple image" vs. "single website image" variants — the template
+ * (components/case-study/ScreenStack.tsx) infers it purely from
+ * `screens.length` (1 → renders as one tall block, 2+ → a stacked column
+ * with captions), so a project's shape can never drift out of sync with a
+ * separate flag nobody remembered to update.
+ *
+ * `coverImage` no longer exists as its own field — the new template has no
+ * separate hero-cover section, so each project's former cover image is
+ * just `screens[0]` now (kept caption-less, since it never had one), with
+ * the original 3 screens following it.
  */
 export interface ProjectScreen {
   image: string;
-  caption: string;
+  /** Optional — the lead image (former coverImage) has none. */
+  caption?: string;
 }
 
 export interface ProjectFrontmatter {
   title: string;
+  /** Shown as the one descriptive paragraph next to the title — v2's
+   *  separate overview/problem/whatIDid fields are gone; there's nowhere
+   *  in this design for them to render. */
   tagline: string;
-  role: string;
+  client: string;
+  scope: string;
   timeline: string;
-  category: string;
   year: string;
-  coverImage: string;
-  overview: string;
-  problem: string;
-  whatIDid: string;
   screens: ProjectScreen[];
   order: number;
 }
@@ -43,14 +62,10 @@ const CONTENT_DIR = path.join(process.cwd(), "content", "projects");
 const REQUIRED_FIELDS = [
   "title",
   "tagline",
-  "role",
+  "client",
+  "scope",
   "timeline",
-  "category",
   "year",
-  "coverImage",
-  "overview",
-  "problem",
-  "whatIDid",
   "screens",
   "order",
 ] as const;
@@ -103,16 +118,22 @@ export async function getAllProjects(): Promise<Project[]> {
 }
 
 /**
- * Next project, wrapping around to the first past the last — matches the
- * Figma file itself: RevUp's "NEXT CASE STUDY" points back to Test Taker,
- * not nowhere. A single-project collection returns null (nothing to link to).
+ * The next `count` projects after `slug`, wrapping around past the last one
+ * back to the first — matches v2's single-`getNextProject` wraparound
+ * behaviour, just returning 2 for Figma's "More Projects" grid instead of
+ * 1. A collection with `count` or fewer OTHER projects still returns
+ * however many actually exist rather than padding or repeating one.
  */
-export async function getNextProject(slug: string): Promise<Project | null> {
+export async function getNextProjects(
+  slug: string,
+  count: number,
+): Promise<Project[]> {
   const all = await getAllProjects();
-  if (all.length <= 1) return null;
+  if (all.length <= 1) return [];
 
   const index = all.findIndex((p) => p.slug === slug);
-  if (index === -1) return null;
+  if (index === -1) return [];
 
-  return all[(index + 1) % all.length];
+  const n = Math.min(count, all.length - 1);
+  return Array.from({ length: n }, (_, i) => all[(index + i + 1) % all.length]);
 }
