@@ -23,18 +23,25 @@ const LINKS = [
  * content at 1376px and centers it — same split every full-bleed-background
  * section on the page needs.
  *
- * Internal rhythm (icon → copy → hairline → hairline → social row) runs on
- * a flat 80px gap at desktop (verified fresh against Figma) via the gap-20
- * on the wrapper below. No top padding of its own — the gap from Quote
- * comes from `<main>`'s shared gap-40 (see app/page.tsx), same as every
- * other section boundary. Contact IS the footer though, and nothing
- * follows it for a gap to apply against, so it keeps its own bottom
- * padding — 80px at desktop, matching the frame's own bottom inset, but
- * only 24px at mobile (Figma `79:419`'s `pb-[24px]`, a real, much smaller
- * value, not the same 80px scaled down). The icon mark above the copy is
- * new too — Figma added it in this same pass, it wasn't here before, and
- * it's 32px at mobile (`79:422`) vs. 76px at desktop — not the 52px middle
- * step an earlier pass used, which wasn't sourced from any verified frame.
+ * Internal rhythm at desktop (icon+copy block → hairline → social row)
+ * runs on a flat 80px gap via the `lg:gap-20` on the wrapper below — that
+ * part's unchanged (verified fresh against `121:669`, still 3 top-level
+ * sections at desktop since the nav sits INLINE with the message there,
+ * not as its own row — see the nav's own comment further down). Mobile
+ * got real extra breathing room in a later Figma pass (`127:1030`,
+ * re-pulled after direct feedback that it read as too congested): the
+ * message/email block, the nav row, the hairline, and the social row are
+ * now four genuinely separate mobile sections each 48px apart (`gap-12`
+ * on the wrapper), not the old flat 32px — a real increase, not a
+ * rounding change, confirmed against the fresh frame's own y-offsets.
+ * No top padding of its own — the gap from Quote comes from `<main>`'s
+ * shared gap-40 (see app/page.tsx), same as every other section boundary.
+ * Contact IS the footer though, and nothing follows it for a gap to apply
+ * against, so it keeps its own bottom padding — 80px at desktop, matching
+ * the frame's own bottom inset, and 24px at mobile (unchanged in this
+ * pass — Figma's mobile frame still ends on that same real, much smaller
+ * value, not the 80px scaled down). The icon mark above the copy is 32px
+ * at mobile vs. 76px at desktop, also unchanged this pass.
  *
  * Side gutter is also its own value here, not the shared 32px
  * `px-gutter-lg` every other section uses — Figma's Contact frame insets
@@ -47,10 +54,20 @@ const LINKS = [
  * project…" identically at `rgba(27,30,31,0.6)`; an earlier pass had the
  * first half at full ink opacity, which no longer matches.
  *
- * The nav-links row wraps into two rows at mobile (Figma `79:426`'s own
- * `flex-wrap justify-between`, 24px row gap) instead of the single row
- * desktop keeps — "my works" and "experience" are wide enough that a
- * forced single row would overflow a 350px content column.
+ * Nav is now rendered TWICE — once `hidden lg:flex` inline beside the
+ * message (desktop), once `lg:hidden` as its own standalone block (mobile)
+ * — rather than one shared `<nav>` repositioned with CSS, because Figma's
+ * fresh mobile frame (`127:1030`) doesn't just reflow the same row
+ * narrower: it's a structurally separate section now, sitting 48px below
+ * the message/email block and 48px above the hairline, where before it
+ * was grouped tightly with the message. A single shared element can't
+ * carry two different gap values to two different neighbours depending on
+ * breakpoint without becoming two elements — same "genuinely different
+ * arrangement, not a narrower one" call this codebase already makes
+ * elsewhere (e.g. MoreProjects.tsx's own mobile/desktop split). It still
+ * wraps via `flex-wrap` on mobile if it ever needs to (four items fit one
+ * row at 350px with room to spare per the fresh frame, but nothing forces
+ * that).
  *
  * Back-to-top drops its "Back to top" text label at mobile (Figma `79:450`
  * has just the bare 32px icon control, no text next to it) and the button
@@ -67,8 +84,8 @@ const LINKS = [
 export default function Contact() {
   return (
     <section id="contact" aria-label="Contact">
-      <div className="page-container flex flex-col gap-8 px-gutter pb-6 lg:gap-20 lg:px-10 lg:pb-20">
-        <div className="flex flex-col gap-4 lg:gap-8">
+      <div className="page-container flex flex-col gap-12 px-gutter pb-6 lg:gap-20 lg:px-10 lg:pb-20">
+        <div className="flex flex-col gap-6 lg:gap-8">
           <Reveal>
             <IconMark className="size-8 lg:size-[76px]" />
           </Reveal>
@@ -77,7 +94,7 @@ export default function Contact() {
             group
             className="flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-start lg:gap-10"
           >
-            <div className="flex w-full max-w-[676px] flex-col gap-4 lg:gap-12">
+            <div className="flex w-full max-w-[676px] flex-col gap-6 lg:gap-16">
               <p className="text-[clamp(1.5rem,3vw,2rem)] leading-[1.2] tracking-display text-ink-muted">
                 I&rsquo;d love to hear from you! Whether you have a project in
                 mind or just want to say hi, feel free to reach out.
@@ -86,7 +103,15 @@ export default function Contact() {
               <CopyEmailLink />
             </div>
 
-            <nav className="flex flex-wrap items-center justify-between gap-x-8 gap-y-6 lg:flex-nowrap lg:justify-start lg:gap-8">
+            {/* Desktop only — nav sits inline beside the message here, same
+                row (Figma `121:669`'s "Frame 33" is inline with the message
+                block, not a separate row, at this breakpoint). Mobile gets
+                its own standalone copy below instead of this one just
+                un-hiding, since Figma's mobile frame (`127:1030`) now
+                structures it as a genuinely separate block — its own
+                48px gaps before AND after, not grouped with the message —
+                not a case of the same row simply wrapping narrower. */}
+            <nav className="hidden lg:flex lg:flex-nowrap lg:gap-8">
               {LINKS.map((link) => (
                 <SmoothAnchor
                   key={link.href}
@@ -99,6 +124,23 @@ export default function Contact() {
             </nav>
           </Reveal>
         </div>
+
+        {/* Mobile only — see the desktop nav's own comment above for why
+            this is a separate block instead of one nav shared across
+            breakpoints. */}
+        <Reveal className="lg:hidden">
+          <nav className="flex flex-wrap items-center gap-x-8 gap-y-6">
+            {LINKS.map((link) => (
+              <SmoothAnchor
+                key={link.href}
+                href={link.href}
+                className="link-underline font-mono text-[14px] leading-none text-ink/60 uppercase transition-colors duration-300 hover:text-ink"
+              >
+                {link.label}
+              </SmoothAnchor>
+            ))}
+          </nav>
+        </Reveal>
 
         <Reveal as="span" className="h-px w-full bg-line" />
 

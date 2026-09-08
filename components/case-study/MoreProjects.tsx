@@ -67,6 +67,16 @@ function Card({ project }: { project: Project }) {
  * getNextProjects(slug, 2) supplies them, wrapping past the last project
  * back to the first (same wraparound v2 had, just returning 2 now).
  *
+ * Mobile card gap is 24px (`gap-6`), NOT Figma's own literal 8px
+ * (`81:494`'s two cards sit 8px apart) — same situation, and same fix, as
+ * ProjectsGrid.tsx's home-grid cards: the literal value only reads fine in
+ * Figma's mockup because its placeholder covers are flat grey rectangles
+ * with no visual weight; real photos at 8px read as congested, no
+ * breathing room. Desktop's 24px (`gap-6`) is untouched — it already
+ * matches Figma exactly (`77:97`'s two 676px-wide cards sit a genuine 24px
+ * apart), and reads fine there since the cards themselves are so much
+ * wider.
+ *
  * Card caption reuses ProjectsGrid.tsx's home-page convention (title left,
  * `Scope — Year` right, muted) rather than Figma's own placeholder
  * "THINGS® / 07.25" — that text is a repeated dummy string in the Figma
@@ -106,7 +116,7 @@ export default function MoreProjects({ projects }: { projects: Project[] }) {
           More Projects
         </Reveal>
 
-        <div className="grid grid-cols-1 gap-2">
+        <div className="grid grid-cols-1 gap-6">
           {projects.map((project) => (
             <Card key={project.slug} project={project} />
           ))}

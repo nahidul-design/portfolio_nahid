@@ -30,6 +30,14 @@ import SmoothAnchor from "./SmoothAnchor";
  * Both job-title sizes (24px desktop `Row`, 20px mobile `MobileRow`) run
  * at `leading-[1.35]` per the site-wide rule that any 20px/24px text uses
  * 135% line-height, not the 120%/`leading-normal` each used before.
+ *
+ * Mobile's internal rhythm is 24px (`gap-6`) now, not the original flat
+ * 16px (`gap-4`) — a later Figma pass increased it (confirmed via a
+ * dev-mode gap annotation on the frame showing 24 between the job list and
+ * the section after it), on the outer section-to-section gaps AND the
+ * job-to-job gap inside the timeline rail. `MobileRow`'s own internal
+ * title/dates/company stacking (`gap-2`, 8px) is untouched — that's a
+ * different, tighter grouping the Figma pass didn't touch.
  */
 const JOBS = [
   {
@@ -148,15 +156,15 @@ export default function Resume() {
       </Reveal>
 
       {/* ---- Mobile (Figma 79:376) ------------------------------------ */}
-      <div className="flex w-full flex-col gap-4 lg:hidden">
-        <div className="flex w-full flex-col gap-4">
+      <div className="flex w-full flex-col gap-6 lg:hidden">
+        <div className="flex w-full flex-col gap-6">
           <Reveal as="div" className="w-fit">
             <EyebrowTag>experience</EyebrowTag>
           </Reveal>
 
           <Reveal
             group
-            className="flex w-full flex-col gap-4 border-l border-ink/10 pl-6"
+            className="flex w-full flex-col gap-6 border-l border-ink/10 pl-6"
           >
             {JOBS.map((job, i) => (
               <Fragment key={job.title}>
@@ -173,7 +181,7 @@ export default function Resume() {
 
         <Reveal as="span" className="h-px w-full bg-line" />
 
-        <div className="flex w-full flex-col gap-4">
+        <div className="flex w-full flex-col gap-6">
           <Reveal as="div" className="w-fit">
             <EyebrowTag>education</EyebrowTag>
           </Reveal>
