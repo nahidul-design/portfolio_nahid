@@ -21,32 +21,27 @@ import Reveal from "./Reveal";
  * "THINGS® / _07.25" placeholder, so PROJECTS below carries that real copy
  * too.
  *
- * A project can carry MORE THAN ONE tag (`tags: Tag[]`, not a single
- * `tag`) — kotha uses this: it's one real project available as both a web
- * AND an app version (confirmed directly, not assumed from the name
- * match), and gets ONE card carrying both `saas` and `mobile` rather than
- * two separate cards, so it surfaces under either filter without "All"
- * ever rendering it twice.
+ * A project CAN carry more than one tag (`tags: Tag[]`, not a single
+ * `tag`) — the type still supports it — but as of this pass nothing
+ * actually uses more than one. Both kotha and probash kormi went through a
+ * multi-tag phase and have since moved off it, for two different reasons:
  *
- * Probash kormi is the opposite case, on purpose: it also has a web AND an
- * app version, but — unlike kotha — BOTH get their own separate card here
- * (`probash-kormi` under Landing, `probash-kormi-app` under Mobile), each
- * with its own distinct cover art and its own case-study slug/content, not
- * a shared one. This went through two shapes before landing here: Figma's
- * grid briefly dropped to 18 cards by removing ONE of each pair's
- * duplicate (kotha's SAAS card AND probash kormi's Mobile card), which is
- * when `tags` was first added — multi-tagging kotha's single remaining
- * card so it wouldn't silently drop out of the SAAS filter. Probash kormi
- * was ALSO multi-tagged onto its one remaining (Landing) card at that
- * point, matching kotha's treatment. That's since been reverted: the App
- * version has its own real screenshots and its own case-study content now
- * (`public/projects/probash-kormi-app/`), so it gets its own visible card
- * again instead of being folded into the Landing card's tags. If kotha
- * ever gets a second, genuinely different set of app-specific screens too,
- * the same split (two real cards/slugs, not one multi-tagged one) is the
- * pattern to follow — multi-tagging is for "the same one thing shown under
- * two filters," not a substitute for two things that both deserve their
- * own case study.
+ *   - Probash kormi has a REAL web version and a REAL app version, each
+ *     with its own distinct cover art and its own case-study slug/content
+ *     (`probash-kormi` under Landing, `probash-kormi-app` under Mobile) —
+ *     two genuinely different things that both deserve their own card, not
+ *     one thing shown under two filters.
+ *   - Kotha is mobile-only now, single-tagged, no `extraTags` — it briefly
+ *     carried `["mobile", "saas"]` (see git history) after Figma's grid
+ *     dropped kotha's separate SAAS card, but that was corrected per
+ *     direct instruction: kotha belongs under Mobile ONLY, not cross-listed
+ *     into SAAS & Web Apps just because it happens to share a slug/cover
+ *     history with an earlier SAAS-tagged card that no longer exists.
+ *
+ * So `tags` is currently a single-element array on every project — kept as
+ * an array (not simplified back to one `tag: Tag` field) since it's cheap
+ * to support and a future project genuinely shared across two filters
+ * (like probash kormi almost was) would need it again.
  *
  * Every card gets its OWN canonical slug, slugified from its real title
  * (`akg-delivery`, `klimaregnskap`, …) — not borrowed/cycled from an
@@ -165,13 +160,7 @@ const LANDING_PROJECTS: ProjectInput[] = [
 ];
 
 const MOBILE_PROJECTS: ProjectInput[] = [
-  {
-    title: "kotha",
-    year: 2025,
-    slug: "kotha",
-    cover: "/works/mobile/cover-1.webp",
-    extraTags: ["saas"],
-  },
+  { title: "kotha", year: 2025, slug: "kotha", cover: "/works/mobile/cover-1.webp" },
   { title: "jamahook", year: 2024, slug: "jamahook", cover: "/works/mobile/cover-2.webp" },
   { title: "probash kormi", year: 2024, slug: "probash-kormi-app", cover: "/works/mobile/cover-3.webp" },
 ];

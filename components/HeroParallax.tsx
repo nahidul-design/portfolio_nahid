@@ -8,15 +8,18 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
  * the old AboutParallax.tsx (deleted in the v3 redesign, which moved these
  * two photos from About into Hero but dropped the motion along with it).
  * Same mechanism, just retuned for the hero's wider/shorter band instead of
- * About's near-square card: background scrubs slower (±6% yPercent) than
- * the subject cutout (±3%), so the subject reads as floating above it, plus
- * a slow always-on breathing scale on the background's own wrapper — never
- * the <img> itself, so it can't fight the scroll-scrub tween over the same
- * `transform` property (the exact bug CLAUDE.md warns about).
+ * About's near-square card — with one deliberate difference from the old
+ * version: only the BACKGROUND scroll-scrubs (±6% yPercent) now. The
+ * subject cutout used to scrub too (±3%, reading as "floating above" the
+ * background) but that's gone — see the subject-motion history below for
+ * why. The background also gets a slow always-on breathing scale on its
+ * own wrapper — never the <img> itself, so it can't fight the scroll-scrub
+ * tween over the same `transform` property (the exact bug CLAUDE.md warns
+ * about).
  *
  * The subject cutout ALSO gets an entrance (fade+scale in, once) plus its
  * own always-on idle breathing scale afterward (`objWrapRef`) — this went
- * through three iterations before landing here:
+ * through FOUR iterations before landing here:
  *
  *   1. No motion at all beyond the scroll-scrub → read as "dead"/static
  *      before any scrolling happened.
@@ -26,16 +29,34 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
  *      base meant to sit flush with the band's bottom edge), but ANY
  *      negative `y` on the wrapper lifts the whole image off that anchor,
  *      opening a gap of bare background between the subject and the band's
- *      bottom edge — worse, the float never rests at `y:0`, so the subject
- *      almost never actually sat flush with the ground it's supposed to
- *      stand on. "Should always stay fixed in bottom" ruled out any
- *      vertical translate entirely.
- *   3. This version: idle motion is a `scale` breathe instead of a `y`
- *      float, with `transformOrigin: "50% 100%"` (bottom-center) — scaling
- *      from the BOTTOM edge means growing/shrinking only ever moves the
- *      TOP of the subject; the bottom edge never leaves the band's bottom
- *      edge, so there's no gap to open, ever. The entrance uses the same
- *      bottom-anchored scale (0.92→1) + opacity, no `y` component either.
+ *      bottom edge. "Should always stay fixed in bottom" ruled out any
+ *      vertical translate on the WRAPPER.
+ *   3. Switched idle motion to a `scale` breathe with `transformOrigin:
+ *      "50% 100%"` (bottom-center) on the wrapper — scaling from the
+ *      bottom edge means growing/shrinking only ever moves the TOP of the
+ *      subject, so the wrapper's own bottom edge never leaves the band's
+ *      bottom edge. Confirmed via computed geometry this closed the gap
+ *      the WRAPPER could open — but the gap kept being reported anyway.
+ *   4. The actual remaining cause: `objTween` below — the pre-existing
+ *      scroll-scrub `yPercent` — runs on the `<img>` ITSELF, not the
+ *      wrapper, so step 3's wrapper-level fix never touched it. That scrub
+ *      isn't zero at rest: confirmed live, at `scrollY: 0` (page just
+ *      loaded, before any scrolling) the img already carried a non-zero
+ *      `translateY` from this tween, because the band sits high enough in
+ *      the page that its ScrollTrigger's start/end boundaries don't put
+ *      scroll-position-0 at exactly 0% progress. That's a real, independent
+ *      way for the rendered pixels to drift off the wrapper's true bottom
+ *      edge — at rest, not just mid-scroll — regardless of how solid the
+ *      wrapper's own bottom-anchoring is. Given the explicit requirement
+ *      that the subject "should always stay stuck to the bottom edge," the
+ *      only way to actually guarantee that is to not put any vertical
+ *      scroll motion on the subject `<img>` at all — so `objTween` and
+ *      `OBJ_RANGE` are gone. The subject now sits perfectly still relative
+ *      to its own wrapper at every scroll position; only the BACKGROUND
+ *      still parallaxes underneath it. This trades away the "subject reads
+ *      as floating above the background" depth effect an earlier pass
+ *      intentionally added — that's the correct trade given the explicit
+ *      "always stuck" requirement voiced twice now.
  *
  * The entrance itself was also silently finishing before it could ever be
  * SEEN: it used to fire immediately on mount, ran ~1.1s, and settled long
@@ -76,7 +97,6 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
  * into lockstep and read as one mechanical pulse.
  */
 const BG_RANGE = 6; // yPercent travel, background layer (slower)
-const OBJ_RANGE = 3; // faster — reads as floating above the background
 const BG_BREATHE_SCALE = 1.06;
 const BG_BREATHE_LEG = 5; // seconds one direction; yoyo+repeat ≈ 10s full cycle
 const OBJ_BREATHE_SCALE = 1.045; // subtler than the background's — it's a person, not a landscape
@@ -130,21 +150,6 @@ export default function HeroParallax({
       repeat: -1,
     });
 
-    const objTween = gsap.fromTo(
-      obj,
-      { yPercent: -OBJ_RANGE },
-      {
-        yPercent: OBJ_RANGE,
-        ease: "none",
-        scrollTrigger: {
-          trigger: band,
-          start: "top bottom",
-          end: "bottom top",
-          scrub: true,
-        },
-      },
-    );
-
     let objBreathe: gsap.core.Tween | undefined;
     let entrance: gsap.core.Tween | undefined;
     let timeout: number | undefined;
@@ -178,8 +183,6 @@ export default function HeroParallax({
       bgTween.scrollTrigger?.kill();
       bgTween.kill();
       breathe.kill();
-      objTween.scrollTrigger?.kill();
-      objTween.kill();
       window.removeEventListener("nh-intro-reveal", playEntrance);
       window.clearTimeout(timeout);
       entrance?.kill();
@@ -204,7 +207,22 @@ export default function HeroParallax({
       ref={bandRef}
       className="relative aspect-[390/300] w-full overflow-hidden lg:aspect-[1440/720]"
     >
-      <div ref={bgWrapRef} className="absolute inset-0 h-full w-full">
+      {/* `-inset-px` (1px overscan past the band's own edge on all four
+          sides), not the plain `inset-0` an earlier pass used — reported
+          as a ~2px sliver of bare page background visible at the very
+          bottom of the band on some mobile widths. The band's own
+          `aspect-[390/300]` computes a FRACTIONAL pixel height at real
+          device widths (390 is Figma's canvas width, not every phone's
+          actual viewport width), and this wrapper also carries its own
+          `scale` breathing transform — a transformed child inside an
+          `overflow-hidden` parent can round its edges to a different
+          sub-pixel than the parent's own clip rect, which is exactly the
+          kind of hairline seam this produces. There's no way to compute a
+          "correct" fractional value that fixes it for every possible
+          width, so this just guarantees a permanent small overscan buffer
+          instead — cheap insurance, invisible at any zoom level anyone
+          would actually use. */}
+      <div ref={bgWrapRef} className="absolute -inset-px">
         <img
           ref={bgRef}
           src={background}
@@ -228,18 +246,29 @@ export default function HeroParallax({
         />
       </div>
 
-      {/* Object (subject cutout) is 92% of the band's height at mobile
-          (`79:248`: 276/300) vs. 80.3% at desktop — a real proportion
-          difference, not a rendering side-effect of the band's own aspect
-          change above. Both stay bottom-anchored via `object-bottom` +
-          `bottom-0`, so only the height percentage needs the split.
-          Sizing/positioning lives on this wrapper now (the entrance/breathe
-          target, transform-origin pinned to its own bottom edge — see the
-          file-level comment above for why); the <img> inside just fills it
-          and keeps the scroll-scrubbed yPercent tween. */}
+      {/* Object (subject cutout)'s BASE proportions are 92% of the band's
+          height at mobile (`79:248`: 276/300) vs. 80.3% at desktop — a
+          real proportion difference, not a rendering side-effect of the
+          band's own aspect change above. Sizing/positioning lives on this
+          wrapper now (the entrance/breathe target, transform-origin
+          pinned to its own bottom edge — see the file-level comment above
+          for why); the <img> inside just fills it and keeps the
+          scroll-scrubbed yPercent tween.
+
+          Both breakpoints get nudged 2px further down — `bottom-[-2px]`
+          instead of `bottom-0`, i.e. 2px BELOW the band's true bottom
+          edge, not 2px of extra gap above it. That overflow is caught for
+          free by `overflow-hidden` on the band (`bandRef` below), which
+          was already there for the background/parallax layers.
+
+          The 10% size-up (92 → 101.2%) is MOBILE ONLY, per direct
+          correction — an earlier pass applied it to desktop too (assuming
+          the same "reads lifted" complaint meant the same fix), but
+          desktop only ever needed the 2px nudge; its base 80.3% proportion
+          was correct as-is and stays untouched. */}
       <div
         ref={objWrapRef}
-        className="absolute bottom-0 left-1/2 h-[92%] w-auto -translate-x-1/2 lg:h-[80.3%]"
+        className="absolute bottom-[-2px] left-1/2 h-[101.2%] w-auto -translate-x-1/2 lg:h-[80.3%]"
       >
         <img
           ref={objRef}
